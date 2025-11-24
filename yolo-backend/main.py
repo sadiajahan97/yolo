@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from database import prisma
 from fastapi import FastAPI
-from routers import auth, gemini, yolo
+from routers import auth, gemini, user, yolo
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -13,4 +13,5 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(auth.router)
 app.include_router(gemini.router)
+app.include_router(user.router)
 app.include_router(yolo.router)

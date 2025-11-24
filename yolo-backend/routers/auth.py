@@ -81,7 +81,7 @@ async def sign_in(
                 detail="JWT secret key not configured"
             )
         
-        expiration_time = datetime.now(timezone.utc) + timedelta(hours=1)
+        expiration_time = datetime.now(timezone.utc) + timedelta(hours=24)
         
         payload = {
             "id": user.id,
