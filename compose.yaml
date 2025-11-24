@@ -12,7 +12,7 @@ services:
         condition: service_healthy
     build: ./yolo-backend
     environment:
-      DATABASE_URL: postgres://root:r00t@db:5432/yolo
+      DATABASE_URL: postgres://postgres:p0stgr3s@db:5432/yolo
     env_file:
       - path: ./yolo-backend/.env.example
       - path: ./yolo-backend/.env
@@ -34,7 +34,7 @@ services:
     volumes:
       - db:/var/lib/postgresql/data
     environment:
-      POSTGRES_PASSWORD: r00t
+      POSTGRES_PASSWORD: p0stgr3s
       POSTGRES_DB: yolo
     healthcheck:
       test:
