@@ -1,8 +1,10 @@
 import google.generativeai as genai
+import io
+import json
 import os
 from dotenv import load_dotenv
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, File, Form, UploadFile
+from PIL import Image
 
 load_dotenv()
 
@@ -15,24 +17,29 @@ router = APIRouter(
     tags=["Gemini"]
 )
 
-class AskRequest(BaseModel):
-    detections: list
-    question: str
-
 @router.post("/ask")
-async def ask_question(request: AskRequest):
+async def ask_question(
+    file: UploadFile = File(...),
+    detections: str = Form(...),
+    question: str = Form(...)
+):
+    detections_list = json.loads(detections)
+    
+    image_bytes = await file.read()
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    
     prompt = f"""
 You are an assistant that answers questions about YOLO object detections.
 
 Detections:
-{request.detections}
+{detections_list}
 
 User question:
-{request.question}
+{question}
 
-Answer concisely based only on the detection data.
+Answer concisely based on both the detection data and the image provided.
 """
 
-    response = model.generate_content(prompt)
+    response = model.generate_content([image, prompt])
 
     return {"answer": response.text}
