@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ReactNode } from "react";
+import { QueryClientProviderComponent } from "./components/query-client-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,7 +22,9 @@ export default function AuthLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>{children}</body>
+      <QueryClientProviderComponent>
+        <body className={`${inter.variable} antialiased`}>{children}</body>
+      </QueryClientProviderComponent>
     </html>
   );
 }
