@@ -53,7 +53,9 @@ async def verify_access_token(
             detail="Invalid authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
+    except HTTPException:
+        raise
     except Exception as exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
