@@ -1,6 +1,7 @@
+import base64
 import io
-from fastapi import APIRouter, File, UploadFile
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi import APIRouter, Depends, File, UploadFile
+from middlewares import verify_access_token
 from PIL import Image
 from ultralytics import YOLO
 
@@ -12,7 +13,10 @@ router = APIRouter(
 )
 
 @router.post("/detect")
-async def detect_objects(file: UploadFile = File(...)):
+async def detect_objects(
+    file: UploadFile = File(...),
+    user: dict = Depends(verify_access_token)
+):
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     
@@ -31,11 +35,14 @@ async def detect_objects(file: UploadFile = File(...)):
                 "bounding_box": [x1, y1, x2, y2]
             })
     
-    annotated_image = results[0].plot()
+    annotated_image = Image.fromarray(results[0].plot())
     buffer = io.BytesIO()
     annotated_image.save(buffer, format="PNG")
     buffer.seek(0)
-
-    return StreamingResponse(buffer, media_type="image/png", headers={
-        "X-Detections": str(detections)
-    })
+    
+    image_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    
+    return {
+        "annotated_image": f"data:image/png;base64,{image_base64}",
+        "detections": detections
+    }

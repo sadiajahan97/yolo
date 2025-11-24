@@ -2,7 +2,7 @@ import bcrypt
 import jwt
 import os
 from database import prisma
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from fastapi import APIRouter, Body, HTTPException, status
 from pydantic import EmailStr
@@ -81,7 +81,7 @@ async def sign_in(
                 detail="JWT secret key not configured"
             )
         
-        expiration_time = datetime.utcnow() + timedelta(hours=1)
+        expiration_time = datetime.now(timezone.utc) + timedelta(hours=1)
         
         payload = {
             "id": user.id,
