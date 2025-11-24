@@ -3,54 +3,48 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
-import { signUp } from "@/api";
+import { signIn } from "@/api";
+import { useRouter } from "next/navigation";
 import { AxiosError } from "axios";
 
-interface SignUpFormData {
-  name: string;
+interface SignInFormData {
   email: string;
   password: string;
-  confirmPassword: string;
 }
 
-export const SignUpForm = () => {
+export const SignInForm = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+
+  const router = useRouter();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    getValues,
     reset,
-  } = useForm<SignUpFormData>();
+  } = useForm<SignInFormData>();
 
   const handleToggleShowPassword = () => setShowPassword(!showPassword);
 
-  const handleToggleShowConfirmPassword = () =>
-    setShowConfirmPassword(!showConfirmPassword);
-
-  const signUpMutation = useMutation({
-    mutationFn: (data: SignUpFormData) =>
-      signUp(data.email, data.password, data.name),
-    onSuccess: () => {
+  const signInMutation = useMutation({
+    mutationFn: (data: SignInFormData) => signIn(data.email, data.password),
+    onSuccess: (response) => {
+      localStorage.setItem("access-token", response.data.access_token);
       setError(null);
-      setSuccess("Account created successfully");
       reset();
+      router.push("/yolo");
     },
     onError: (error: AxiosError) => {
-      setSuccess(null);
-      if (error?.response?.status === 409) {
-        setError("Email already registered");
+      if (error?.response?.status === 401) {
+        setError("Invalid email or password");
       } else {
         setError("An error occurred. Please try again.");
       }
     },
   });
 
-  const onSubmit = (data: SignUpFormData) => signUpMutation.mutate(data);
+  const onSubmit = (data: SignInFormData) => signInMutation.mutate(data);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -59,46 +53,9 @@ export const SignUpForm = () => {
           <p className="text-sm text-red-600">{error}</p>
         </div>
       )}
-      {success && (
-        <div className="mb-4 p-3 bg-red-50 border border-green-600 rounded-[10px]">
-          <p className="text-sm text-green-600">{success}</p>
-        </div>
-      )}
       <div className="mb-[22px]">
         <label
-          htmlFor="name"
-          className="block text-sm font-semibold text-slate-700 mb-2"
-        >
-          Full Name
-        </label>
-        <div className="relative">
-          <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 stroke-[#94a3b8] stroke-2 fill-none"
-            viewBox="0 0 24 24"
-          >
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          <input
-            type="text"
-            id="name"
-            placeholder="John Doe"
-            {...register("name", {
-              required: "Full name is required",
-            })}
-            className={`focus:outline-none focus:border-[#2563eb] focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)] w-full py-[14px] pr-4 pl-12 border-[1.5px] ${
-              errors.name ? "border-red-600" : "border-[#e2e8f0]"
-            } rounded-[10px] text-[15px] font-inter transition-all duration-300 ease-in-out text-[#0f172a]`}
-          />
-        </div>
-        {errors.name && (
-          <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-        )}
-      </div>
-
-      <div className="mb-[22px]">
-        <label
-          htmlFor="email"
+          htmlFor="login-email"
           className="block text-sm font-semibold text-slate-700 mb-2"
         >
           Email Address
@@ -113,7 +70,7 @@ export const SignUpForm = () => {
           </svg>
           <input
             type="email"
-            id="email"
+            id="login-email"
             placeholder="you@example.com"
             {...register("email", {
               required: "Email is required",
@@ -135,7 +92,7 @@ export const SignUpForm = () => {
 
       <div className="mb-[22px]">
         <label
-          htmlFor="password"
+          htmlFor="login-password"
           className="block text-sm font-semibold text-slate-700 mb-2"
         >
           Password
@@ -150,16 +107,10 @@ export const SignUpForm = () => {
           </svg>
           <input
             type={showPassword ? "text" : "password"}
-            id="password"
-            placeholder="Create a password"
+            id="login-password"
+            placeholder="Enter your password"
             {...register("password", {
               required: "Password is required",
-              pattern: {
-                value:
-                  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{}|;':",.<>\/?]).{12,}$/,
-                message:
-                  "Password must be at least 12 characters long and must include at least one uppercase, lowercase, number, and special character",
-              },
             })}
             className={`focus:outline-none focus:border-[#2563eb] focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)] w-full py-[14px] pr-4 pl-12 border-[1.5px] ${
               errors.password ? "border-red-600" : "border-[#e2e8f0]"
@@ -184,61 +135,34 @@ export const SignUpForm = () => {
         )}
       </div>
 
-      <div className="mb-[22px]">
-        <label
-          htmlFor="confirm-password"
-          className="block text-sm font-semibold text-slate-700 mb-2"
-        >
-          Confirm Password
-        </label>
-        <div className="relative">
-          <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 stroke-[#94a3b8] stroke-2 fill-none"
-            viewBox="0 0 24 24"
-          >
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0110 0v4" />
-          </svg>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center">
           <input
-            type={showConfirmPassword ? "text" : "password"}
-            id="confirm-password"
-            placeholder="Confirm your password"
-            {...register("confirmPassword", {
-              required: "Please confirm your password",
-              validate: (value) =>
-                value === getValues("password") || "Passwords do not match",
-            })}
-            className={`focus:outline-none focus:border-[#2563eb] focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)] w-full py-[14px] pr-4 pl-12 border-[1.5px] ${
-              errors.confirmPassword ? "border-red-600" : "border-[#e2e8f0]"
-            } rounded-[10px] text-[15px] font-inter transition-all duration-300 ease-in-out text-[#0f172a]`}
+            type="checkbox"
+            id="remember"
+            className="w-[18px] h-[18px] mr-2 cursor-pointer accent-[#2563eb] focus:outline-none focus:border-[#2563eb] focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)]"
           />
-          <button
-            onClick={handleToggleShowConfirmPassword}
-            type="button"
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-1"
+          <label
+            htmlFor="remember"
+            className="text-[14px] text-slate-600 cursor-pointer m-0 font-medium"
           >
-            <svg
-              viewBox="0 0 24 24"
-              className="w-5 h-5 stroke-slate-400 stroke-2 fill-none"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </button>
+            Remember me
+          </label>
         </div>
-        {errors.confirmPassword && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.confirmPassword.message}
-          </p>
-        )}
+        <a
+          href="#"
+          className="text-[14px] text-[#2563eb] font-semibold no-underline transition-colors duration-300 ease-in-out hover:text-[#1e40af]"
+        >
+          Forgot Password?
+        </a>
       </div>
 
       <button
         type="submit"
-        disabled={signUpMutation.isPending}
+        disabled={signInMutation.isPending}
         className="hover:-translate-y-[2px] hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)] w-full p-[15px] bg-linear-to-br from-[#2563eb] to-[#1e40af] text-white border-0 rounded-[10px] text-[16px] font-semibold cursor-pointer transition-all duration-300 ease-in-out font-inter shadow-[0_4px_12px_rgba(37,99,235,0.3)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
       >
-        {signUpMutation.isPending ? "Creating Account..." : "Create Account"}
+        {signInMutation.isPending ? "Signing In..." : "Sign In"}
       </button>
 
       <div className="flex items-center my-7">
@@ -271,7 +195,7 @@ export const SignUpForm = () => {
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
           />
         </svg>
-        Sign up with Google
+        Sign in with Google
       </button>
     </form>
   );
