@@ -4,7 +4,7 @@ import json
 import os
 from database import prisma
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, status, UploadFile
 from middlewares import verify_access_token
 from PIL import Image
 
@@ -26,18 +26,19 @@ async def ask_question(
     question: str = Form(...),
     user: dict = Depends(verify_access_token)
 ):
-    image_bytes = await file.read()
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    
-    await prisma.message.create(
-        data={
-            "userId": user["id"],
-            "content": question,
-            "role": "user"
-        }
-    )
-    
-    prompt = f"""
+    try:
+        image_bytes = await file.read()
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        
+        await prisma.message.create(
+            data={
+                "userId": user["id"],
+                "content": question,
+                "role": "user"
+            }
+        )
+        
+        prompt = f"""
 You are an assistant that answers questions about YOLO object detections.
 
 Detections:
@@ -49,14 +50,22 @@ User question:
 Answer concisely based on both the detection data and the image provided.
 """
 
-    response = model.generate_content([image, prompt])
+        response = model.generate_content([image, prompt])
 
-    await prisma.message.create(
-        data={
-            "userId": user["id"],
-            "content": response.text,
-            "role": "assistant"
-        }
-    )
+        await prisma.message.create(
+            data={
+                "userId": user["id"],
+                "content": response.text,
+                "role": "assistant"
+            }
+        )
 
-    return {"answer": response.text}
+        return {"answer": response.text}
+
+    except HTTPException:
+        raise
+    except Exception as exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred: {str(exception)}"
+        )
