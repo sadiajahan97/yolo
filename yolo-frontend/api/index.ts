@@ -30,33 +30,35 @@ api.interceptors.request.use(
     }
     return config;
   },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
   (error) => {
+    if (error?.response?.status === 401) {
+      if (typeof window !== "undefined") window.location.href = "/";
+    }
     return Promise.reject(error);
   }
 );
 
-export const signUp = async (email: string, password: string, name: string) => {
-  return await axios.post(`${YOLO_BACKEND_URL}/auth/sign-up`, {
+export const signUp = async (email: string, password: string, name: string) =>
+  await axios.post(`${YOLO_BACKEND_URL}/auth/sign-up`, {
     email,
     password,
     name,
   });
-};
 
-export const signIn = async (email: string, password: string) => {
-  return await axios.post(`${YOLO_BACKEND_URL}/auth/sign-in`, {
+export const signIn = async (email: string, password: string) =>
+  await axios.post(`${YOLO_BACKEND_URL}/auth/sign-in`, {
     email,
     password,
   });
-};
 
-export const getProfile = async () => {
-  return await api.get("/user/profile");
-};
+export const getProfile = async () => await api.get("/user/profile");
 
-export const getMessages = async () => {
-  return await api.get("/user/messages");
-};
+export const getMessages = async () => await api.get("/user/messages");
 
 export const detectObjects = async (file: File) => {
   const formData = new FormData();

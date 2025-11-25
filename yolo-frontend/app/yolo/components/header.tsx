@@ -39,23 +39,7 @@ export const Header = () => {
           <h1>AI Vision Platform</h1>
         </div>
         <div className="user-menu">
-          {isLoading ? (
-            <div className="user-info">
-              <div className="avatar">...</div>
-              <div className="user-details">
-                <div className="user-name">Loading...</div>
-                <div className="user-email">Loading...</div>
-              </div>
-            </div>
-          ) : error ? (
-            <div className="user-info">
-              <div className="avatar">!</div>
-              <div className="user-details">
-                <div className="user-name">Error</div>
-                <div className="user-email">Failed to load profile</div>
-              </div>
-            </div>
-          ) : (
+          {!isLoading && !error && (
             <div className="user-info">
               <div className="avatar">
                 {getInitials(profile?.name || data?.name || "")}

@@ -3,7 +3,15 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    build: ./yolo-frontend
+    build:
+      context: ./yolo-frontend
+      args:
+        NEXT_PUBLIC_YOLO_BACKEND_URL: &BACKEND_URL http://localhost:8000
+    environment:
+      NEXT_PUBLIC_YOLO_BACKEND_URL: *BACKEND_URL
+    env_file:
+      - path: ./yolo-frontend/.env
+        required: false
     ports:
       - 3000:3000
   api:
@@ -14,7 +22,6 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:p0stgr3s@db:5432/yolo
     env_file:
-      - path: ./yolo-backend/.env.example
       - path: ./yolo-backend/.env
         required: false
     healthcheck:

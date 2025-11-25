@@ -117,13 +117,12 @@ export default function YoloPage() {
 
   const onQuestionSubmit = async (data: QuestionFormData) => {
     const file = getValues("file");
-    if (file) {
+    if (file)
       askGeminiMutation.mutate({
         file,
         detections,
         question: data.question.trim(),
       });
-    }
   };
 
   const handleFile = (file: File) => {
