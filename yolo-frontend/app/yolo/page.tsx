@@ -12,11 +12,11 @@ import {
 import { useForm } from "react-hook-form";
 import { Header } from "./components/header";
 import { ProfileContextProvider } from "@/app/contexts/profile";
-import { getMessages } from "@/api";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { UserMessage } from "./components/user-message";
 import { AssistantMessage } from "./components/assistant-message";
-import { Detection, Message, detectObjects } from "@/api";
+import { Detection, Message, detectObjects, getMessages } from "@/api";
+import { calculateBoundingBoxArea } from "@/utils";
 
 interface DetectionFormData {
   file: File | null;
@@ -128,23 +128,24 @@ export default function YoloPage() {
 
   const handleSortTable = (columnIndex: 0 | 1 | 2 | null) => {
     const isAscending = sortColumn === columnIndex && sortDirection === "asc";
+    const newDirection = isAscending ? "desc" : "asc";
     setSortColumn(columnIndex);
-    setSortDirection(isAscending ? "desc" : "asc");
+    setSortDirection(newDirection);
     setDetections(
       [...detections].sort((a, b) => {
         switch (columnIndex) {
           case 0:
-            return isAscending
-              ? b.object.localeCompare(a.object)
-              : a.object.localeCompare(b.object);
+            return newDirection === "asc"
+              ? a.object.localeCompare(b.object)
+              : b.object.localeCompare(a.object);
           case 1:
-            return isAscending
+            return newDirection === "asc"
               ? a.confidence - b.confidence
               : b.confidence - a.confidence;
-          // case 2:
-          //   return isAscending
-          //     ? b.boundingBox.localeCompare(a.boundingBox)
-          //     : a.boundingBox.localeCompare(b.boundingBox);
+          case 2:
+            const areaA = calculateBoundingBoxArea(a.boundingBox);
+            const areaB = calculateBoundingBoxArea(b.boundingBox);
+            return newDirection === "asc" ? areaA - areaB : areaB - areaA;
           default:
             return 0;
         }
