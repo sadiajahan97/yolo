@@ -33,7 +33,7 @@ async def detect_objects(
                 detections.append({
                     "object": class_name,
                     "confidence": confidence,
-                    "bounding_box": [x1, y1, x2, y2]
+                    "boundingBox": [x1, y1, x2, y2]
                 })
         
         annotated_image = Image.fromarray(results[0].plot())
@@ -44,7 +44,7 @@ async def detect_objects(
         image_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
         
         return {
-            "annotated_image": f"data:image/png;base64,{image_base64}",
+            "annotatedImage": f"data:image/png;base64,{image_base64}",
             "detections": detections
         }
     

@@ -2,6 +2,22 @@ import axios from "axios";
 
 const YOLO_BACKEND_URL = process.env.NEXT_PUBLIC_YOLO_BACKEND_URL;
 
+export interface Detection {
+  object: string;
+  confidence: number;
+  boundingBox: [number, number, number, number];
+}
+
+export interface Message {
+  content: string;
+  role: "user" | "assistant";
+}
+
+export interface Profile {
+  name: string;
+  email: string;
+}
+
 const api = axios.create({
   baseURL: YOLO_BACKEND_URL,
 });
@@ -40,4 +56,15 @@ export const getProfile = async () => {
 
 export const getMessages = async () => {
   return await api.get("/user/messages");
+};
+
+export const detectObjects = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return await api.post("/yolo/detect", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 };

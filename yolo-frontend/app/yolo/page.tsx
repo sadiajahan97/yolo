@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import {
@@ -8,23 +9,22 @@ import {
   DragEvent,
   ChangeEvent,
 } from "react";
-import Image from "next/image";
+import { useForm } from "react-hook-form";
 import { Header } from "./components/header";
 import { ProfileContextProvider } from "@/app/contexts/profile";
 import { getMessages } from "@/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { UserMessage } from "./components/user-message";
 import { AssistantMessage } from "./components/assistant-message";
+import { Detection, Message, detectObjects } from "@/api";
 
-interface Detection {
-  object: string;
-  confidence: number;
-  boundingBox: string;
+interface DetectionFormData {
+  file: File | null;
 }
 
-interface Message {
-  content: string;
-  role: "user" | "assistant";
+interface DetectionResponse {
+  annotatedImage: string;
+  detections: Detection[];
 }
 
 export default function YoloPage() {
@@ -34,9 +34,25 @@ export default function YoloPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [detections, setDetections] = useState<Detection[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [annotatedImage, setAnnotatedImage] = useState(
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect fill='%23f1f5f9' width='600' height='400'/%3E%3Crect x='80' y='120' width='180' height='160' fill='none' stroke='%2310b981' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='90' y='145' font-family='Arial' font-size='14' font-weight='bold' fill='%2310b981'%3ECar (0.94)%3C/text%3E%3Crect x='340' y='80' width='140' height='180' fill='none' stroke='%232563eb' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='350' y='105' font-family='Arial' font-size='14' font-weight='bold' fill='%232563eb'%3EPerson (0.89)%3C/text%3E%3Crect x='150' y='260' width='100' height='80' fill='none' stroke='%23f59e0b' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='160' y='285' font-family='Arial' font-size='14' font-weight='bold' fill='%23f59e0b'%3EBike (0.87)%3C/text%3E%3Crect x='380' y='280' width='120' height='90' fill='none' stroke='%23ec4899' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='390' y='305' font-family='Arial' font-size='14' font-weight='bold' fill='%23ec4899'%3ESign (0.76)%3C/text%3E%3Crect x='20' y='30' width='80' height='60' fill='none' stroke='%238b5cf6' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='30' y='55' font-family='Arial' font-size='14' font-weight='bold' fill='%238b5cf6'%3ETree (0.82)%3C/text%3E%3C/svg%3E"
+  );
+  const [detectionError, setDetectionError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+    getValues,
+  } = useForm<DetectionFormData>({
+    defaultValues: {
+      file: null,
+    },
+  });
 
   const { isLoading: messagesLoading, error: messagesError } = useQuery({
     queryKey: ["messages"],
@@ -47,13 +63,29 @@ export default function YoloPage() {
     },
   });
 
+  const detectMutation = useMutation<DetectionResponse, Error, File>({
+    mutationFn: async (file) => {
+      const response = await detectObjects(file);
+      return response.data as DetectionResponse;
+    },
+    onSuccess: (data) => {
+      setDetectionError(null);
+      setDetections(data.detections);
+      setAnnotatedImage(data.annotatedImage);
+    },
+    onError: () => setDetectionError("An error occurred. Please try again."),
+  });
+
+  const onSubmit = async (data: DetectionFormData) => {
+    const file = data.file;
+    if (file) detectMutation.mutate(file);
+  };
+
   const handleFile = (file: File) => {
-    if (file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (event) =>
-        setPreviewImage(event.target?.result as string);
-      reader.readAsDataURL(file);
-    }
+    const reader = new FileReader();
+    reader.onload = (event) => setPreviewImage(event.target?.result as string);
+    reader.readAsDataURL(file);
+    setValue("file", file);
   };
 
   const handleUploadAreaClick = (event: MouseEvent<HTMLDivElement>) => {
@@ -87,6 +119,11 @@ export default function YoloPage() {
   const handleRemoveImage = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
     setPreviewImage("/dummy-preview-image.png");
+    setValue("file", null);
+    setDetections([]);
+    setAnnotatedImage(
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect fill='%23f1f5f9' width='600' height='400'/%3E%3Crect x='80' y='120' width='180' height='160' fill='none' stroke='%2310b981' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='90' y='145' font-family='Arial' font-size='14' font-weight='bold' fill='%2310b981'%3ECar (0.94)%3C/text%3E%3Crect x='340' y='80' width='140' height='180' fill='none' stroke='%232563eb' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='350' y='105' font-family='Arial' font-size='14' font-weight='bold' fill='%232563eb'%3EPerson (0.89)%3C/text%3E%3Crect x='150' y='260' width='100' height='80' fill='none' stroke='%23f59e0b' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='160' y='285' font-family='Arial' font-size='14' font-weight='bold' fill='%23f59e0b'%3EBike (0.87)%3C/text%3E%3Crect x='380' y='280' width='120' height='90' fill='none' stroke='%23ec4899' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='390' y='305' font-family='Arial' font-size='14' font-weight='bold' fill='%23ec4899'%3ESign (0.76)%3C/text%3E%3Crect x='20' y='30' width='80' height='60' fill='none' stroke='%238b5cf6' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='30' y='55' font-family='Arial' font-size='14' font-weight='bold' fill='%238b5cf6'%3ETree (0.82)%3C/text%3E%3C/svg%3E"
+    );
   };
 
   const handleSortTable = (columnIndex: 0 | 1 | 2 | null) => {
@@ -104,10 +141,10 @@ export default function YoloPage() {
             return isAscending
               ? a.confidence - b.confidence
               : b.confidence - a.confidence;
-          case 2:
-            return isAscending
-              ? b.boundingBox.localeCompare(a.boundingBox)
-              : a.boundingBox.localeCompare(b.boundingBox);
+          // case 2:
+          //   return isAscending
+          //     ? b.boundingBox.localeCompare(a.boundingBox)
+          //     : a.boundingBox.localeCompare(b.boundingBox);
           default:
             return 0;
         }
@@ -154,6 +191,17 @@ export default function YoloPage() {
             </button>
             <input
               type="file"
+              {...register("file", {
+                required: "Please select an image file",
+                validate: (file) => {
+                  if (!file) return "Please select a file";
+                  if (!file.type.startsWith("image/"))
+                    return "File must be an image";
+                  if (file.size > 10 * 1024 * 1024)
+                    return "File size must be less than 10MB";
+                  return true;
+                },
+              })}
               ref={fileInputRef}
               className="file-input"
               accept="image/*"
@@ -164,17 +212,31 @@ export default function YoloPage() {
           <div className={`image-preview ${previewImage ? "active" : ""}`}>
             <div className="preview-container">
               <div className="preview-image-wrapper">
-                <Image
+                <img
                   src={previewImage}
                   alt="Preview"
                   className="preview-image"
                 />
               </div>
+              {errors.file && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.file.message}
+                </p>
+              )}
+              {!errors.file && detectionError && (
+                <p className="mt-1 text-sm text-red-600">{detectionError}</p>
+              )}
               <div className="preview-actions">
-                <button className="action-btn detect-btn">
-                  Detect Objects
+                <button
+                  type="button"
+                  className="action-btn detect-btn"
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={detectMutation.isPending || !getValues("file")}
+                >
+                  {detectMutation.isPending ? "Detecting..." : "Detect Objects"}
                 </button>
                 <button
+                  type="button"
                   className="action-btn remove-btn"
                   onClick={handleRemoveImage}
                 >
@@ -190,11 +252,14 @@ export default function YoloPage() {
             <div className="result-card">
               <div className="card-header">
                 <h3 className="card-title">Annotated Image</h3>
-                <span className="card-badge">5 Objects</span>
+                <span className="card-badge">
+                  {detections.length}{" "}
+                  {detections.length === 1 ? "Object" : "Objects"}
+                </span>
               </div>
               <div className="annotated-image-wrapper">
-                <Image
-                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect fill='%23f1f5f9' width='600' height='400'/%3E%3Crect x='80' y='120' width='180' height='160' fill='none' stroke='%2310b981' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='90' y='145' font-family='Arial' font-size='14' font-weight='bold' fill='%2310b981'%3ECar (0.94)%3C/text%3E%3Crect x='340' y='80' width='140' height='180' fill='none' stroke='%232563eb' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='350' y='105' font-family='Arial' font-size='14' font-weight='bold' fill='%232563eb'%3EPerson (0.89)%3C/text%3E%3Crect x='150' y='260' width='100' height='80' fill='none' stroke='%23f59e0b' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='160' y='285' font-family='Arial' font-size='14' font-weight='bold' fill='%23f59e0b'%3EBike (0.87)%3C/text%3E%3Crect x='380' y='280' width='120' height='90' fill='none' stroke='%23ec4899' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='390' y='305' font-family='Arial' font-size='14' font-weight='bold' fill='%23ec4899'%3ESign (0.76)%3C/text%3E%3Crect x='20' y='30' width='80' height='60' fill='none' stroke='%238b5cf6' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='30' y='55' font-family='Arial' font-size='14' font-weight='bold' fill='%238b5cf6'%3ETree (0.82)%3C/text%3E%3C/svg%3E"
+                <img
+                  src={annotatedImage}
                   alt="Annotated"
                   className="annotated-image"
                 />
@@ -264,17 +329,23 @@ export default function YoloPage() {
                             <div className="confidence-progress">
                               <div
                                 className="confidence-fill"
-                                style={{ width: `${detection.confidence}%` }}
+                                style={{
+                                  width: `${detection.confidence * 100}%`,
+                                }}
                               />
                             </div>
                             <span className="confidence-value">
-                              {detection.confidence}%
+                              {Math.round(detection.confidence * 100)}%
                             </span>
                           </div>
                         </td>
                         <td>
                           <span className="boundingBox-coords">
-                            {detection.boundingBox}
+                            (
+                            {detection.boundingBox
+                              .map((coordinate) => Math.round(coordinate))
+                              .join(", ")}
+                            )
                           </span>
                         </td>
                       </tr>

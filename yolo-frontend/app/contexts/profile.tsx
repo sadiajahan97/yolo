@@ -8,11 +8,7 @@ import {
   Dispatch,
   SetStateAction,
 } from "react";
-
-export interface Profile {
-  name: string;
-  email: string;
-}
+import { Profile } from "@/api";
 
 interface ProfileContextType {
   profile: Profile | null;
