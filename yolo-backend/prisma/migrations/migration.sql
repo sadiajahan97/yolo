@@ -1,6 +1,3 @@
--- CreateEnum
-CREATE TYPE "MessageRole" AS ENUM ('USER', 'ASSISTANT');
-
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -18,7 +15,7 @@ CREATE TABLE "messages" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "role" "MessageRole" NOT NULL,
+    "role" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -30,3 +27,4 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- AddForeignKey
 ALTER TABLE "messages" ADD CONSTRAINT "messages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
