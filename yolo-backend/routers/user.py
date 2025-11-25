@@ -47,7 +47,6 @@ async def get_messages(
         
         return [
             {
-                "id": message.id,
                 "content": message.content,
                 "role": message.role
             }

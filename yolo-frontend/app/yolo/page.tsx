@@ -9,28 +9,43 @@ import {
   ChangeEvent,
 } from "react";
 import Image from "next/image";
+import { Header } from "./components/header";
+import { ProfileContextProvider } from "@/app/contexts/profile";
+import { getMessages } from "@/api";
+import { useQuery } from "@tanstack/react-query";
+import { UserMessage } from "./components/user-message";
+import { AssistantMessage } from "./components/assistant-message";
 
-interface TableRow {
+interface Detection {
   object: string;
   confidence: number;
   boundingBox: string;
 }
 
+interface Message {
+  content: string;
+  role: "user" | "assistant";
+}
+
 export default function YoloPage() {
-  const [previewImage, setPreviewImage] = useState("");
+  const [previewImage, setPreviewImage] = useState("/dummy-preview-image.png");
   const [isDragOver, setIsDragOver] = useState(false);
   const [sortColumn, setSortColumn] = useState<0 | 1 | 2 | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [tableData, setTableData] = useState<TableRow[]>([
-    { object: "Car", confidence: 94, boundingBox: "(80, 120, 260, 280)" },
-    { object: "Person", confidence: 89, boundingBox: "(340, 80, 480, 260)" },
-    { object: "Bike", confidence: 87, boundingBox: "(150, 260, 250, 340)" },
-    { object: "Tree", confidence: 82, boundingBox: "(20, 30, 100, 90)" },
-    { object: "Sign", confidence: 76, boundingBox: "(380, 280, 500, 370)" },
-  ]);
+  const [detections, setDetections] = useState<Detection[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const { isLoading: messagesLoading, error: messagesError } = useQuery({
+    queryKey: ["messages"],
+    queryFn: async () => {
+      const response = await getMessages();
+      setMessages(response.data as Message[]);
+      return response.data as Message[];
+    },
+  });
 
   const handleFile = (file: File) => {
     if (file.type.startsWith("image/")) {
@@ -71,15 +86,15 @@ export default function YoloPage() {
 
   const handleRemoveImage = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
-    setPreviewImage("");
+    setPreviewImage("/dummy-preview-image.png");
   };
 
   const handleSortTable = (columnIndex: 0 | 1 | 2 | null) => {
     const isAscending = sortColumn === columnIndex && sortDirection === "asc";
     setSortColumn(columnIndex);
     setSortDirection(isAscending ? "desc" : "asc");
-    setTableData(
-      [...tableData].sort((a, b) => {
+    setDetections(
+      [...detections].sort((a, b) => {
         switch (columnIndex) {
           case 0:
             return isAscending
@@ -104,34 +119,11 @@ export default function YoloPage() {
     if (chatContainerRef.current)
       chatContainerRef.current.scrollTop =
         chatContainerRef.current.scrollHeight;
-  }, []);
+  }, [messages]);
 
   return (
-    <>
-      <header className="header">
-        <div className="header-content">
-          <div className="logo">
-            <div className="logo-icon">
-              <svg viewBox="0 0 24 24">
-                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-            </div>
-            <h1>AI Vision Platform</h1>
-          </div>
-          <div className="user-menu">
-            <div className="user-info">
-              <div className="avatar">JD</div>
-              <div className="user-details">
-                <div className="user-name">John Doe</div>
-                <div className="user-email">john.doe@example.com</div>
-              </div>
-            </div>
-            <button className="logout-btn">Logout</button>
-          </div>
-        </div>
-      </header>
-
+    <ProfileContextProvider>
+      <Header />
       <main className="main-content">
         <section className="upload-section">
           <h2 className="section-title">Upload Image for Detection</h2>
@@ -260,27 +252,29 @@ export default function YoloPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {tableData.map((row, index) => (
+                    {detections.map((detection, index) => (
                       <tr key={index}>
                         <td>
-                          <span className="object-class">{row.object}</span>
+                          <span className="object-class">
+                            {detection.object}
+                          </span>
                         </td>
                         <td>
                           <div className="confidence-bar">
                             <div className="confidence-progress">
                               <div
                                 className="confidence-fill"
-                                style={{ width: `${row.confidence}%` }}
+                                style={{ width: `${detection.confidence}%` }}
                               />
                             </div>
                             <span className="confidence-value">
-                              {row.confidence}%
+                              {detection.confidence}%
                             </span>
                           </div>
                         </td>
                         <td>
                           <span className="boundingBox-coords">
-                            {row.boundingBox}
+                            {detection.boundingBox}
                           </span>
                         </td>
                       </tr>
@@ -307,36 +301,21 @@ export default function YoloPage() {
             </div>
 
             <div className="chat-container" ref={chatContainerRef}>
-              <div className="chat-message user">
-                <div className="message-avatar user">JD</div>
-                <div className="message-content">
-                  What is the confidence score of the largest object?
-                </div>
-              </div>
-              <div className="chat-message ai">
-                <div className="message-avatar ai">AI</div>
-                <div className="message-content">
-                  Based on the detection results, the largest object is the Car
-                  with a bounding box of (80, 120, 260, 280), which has
-                  dimensions of 180x160 pixels. This car has a confidence score
-                  of 94%, making it the most confidently detected object in the
-                  image.
-                </div>
-              </div>
-              <div className="chat-message user">
-                <div className="message-avatar user">JD</div>
-                <div className="message-content">
-                  How many objects were detected with confidence above 85%?
-                </div>
-              </div>
-              <div className="chat-message ai">
-                <div className="message-avatar ai">AI</div>
-                <div className="message-content">
-                  There are 3 objects detected with confidence above 85%: Car
-                  (94%), Person (89%), and Bike (87%). These represent the most
-                  reliable detections in your image.
-                </div>
-              </div>
+              {messagesError ? (
+                <AssistantMessage content="Failed to load messages. Please try again." />
+              ) : messagesLoading ? (
+                <AssistantMessage content="Loading messages..." />
+              ) : messages.length === 0 ? (
+                <AssistantMessage content="No messages yet. Start a conversation!" />
+              ) : (
+                messages.map((message, index) =>
+                  message.role === "user" ? (
+                    <UserMessage key={index} content={message.content} />
+                  ) : (
+                    <AssistantMessage key={index} content={message.content} />
+                  )
+                )
+              )}
             </div>
 
             <div className="qa-input-wrapper">
@@ -350,6 +329,6 @@ export default function YoloPage() {
           </div>
         </div>
       </main>
-    </>
+    </ProfileContextProvider>
   );
 }
