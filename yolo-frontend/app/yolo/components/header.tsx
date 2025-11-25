@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getProfile } from "@/api";
+import { getProfile, Profile } from "@/api";
 import { getInitials } from "@/utils";
-import { useProfile, Profile } from "@/app/contexts/profile";
+import { useProfile } from "@/app/contexts/profile";
 
 export const Header = () => {
   const { profile, setProfile } = useProfile();

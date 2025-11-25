@@ -50,7 +50,11 @@ export const SignUpForm = () => {
     },
   });
 
-  const onSubmit = (data: SignUpFormData) => signUpMutation.mutate(data);
+  const onSubmit = (data: SignUpFormData) =>
+    signUpMutation.mutate({
+      ...data,
+      name: data.name.trim(),
+    });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -84,7 +88,11 @@ export const SignUpForm = () => {
             id="name"
             placeholder="John Doe"
             {...register("name", {
-              required: "Full name is required",
+              required: "Name is required",
+              minLength: {
+                value: 1,
+                message: "Name cannot be empty",
+              },
             })}
             className={`focus:outline-none focus:border-[#2563eb] focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)] w-full py-[14px] pr-4 pl-12 border-[1.5px] ${
               errors.name ? "border-red-600" : "border-[#e2e8f0]"

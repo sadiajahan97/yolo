@@ -68,3 +68,20 @@ export const detectObjects = async (file: File) => {
     },
   });
 };
+
+export const askGemini = async (
+  file: File,
+  detections: Detection[],
+  question: string
+) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("detections", JSON.stringify(detections));
+  formData.append("question", question);
+
+  return await api.post("/gemini/ask", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};

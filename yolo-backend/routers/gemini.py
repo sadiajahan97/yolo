@@ -67,7 +67,10 @@ Answer concisely based on both the detection data and the image provided.
             }
         )
 
-        return {"answer": response.text}
+        return {
+            "content": response.text,
+            "role": "assistant"
+        }
 
     except HTTPException:
         raise

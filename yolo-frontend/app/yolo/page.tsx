@@ -12,19 +12,35 @@ import {
 import { useForm } from "react-hook-form";
 import { Header } from "./components/header";
 import { ProfileContextProvider } from "@/app/contexts/profile";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserMessage } from "./components/user-message";
 import { AssistantMessage } from "./components/assistant-message";
-import { Detection, Message, detectObjects, getMessages } from "@/api";
+import {
+  Detection,
+  Message,
+  detectObjects,
+  getMessages,
+  askGemini,
+} from "@/api";
 import { calculateBoundingBoxArea } from "@/utils";
 
 interface DetectionFormData {
   file: File | null;
 }
 
+interface QuestionFormData {
+  question: string;
+}
+
 interface DetectionResponse {
   annotatedImage: string;
   detections: Detection[];
+}
+
+interface AskGeminiFormData {
+  file: File;
+  detections: Detection[];
+  question: string;
 }
 
 export default function YoloPage() {
@@ -38,9 +54,11 @@ export default function YoloPage() {
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect fill='%23f1f5f9' width='600' height='400'/%3E%3Crect x='80' y='120' width='180' height='160' fill='none' stroke='%2310b981' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='90' y='145' font-family='Arial' font-size='14' font-weight='bold' fill='%2310b981'%3ECar (0.94)%3C/text%3E%3Crect x='340' y='80' width='140' height='180' fill='none' stroke='%232563eb' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='350' y='105' font-family='Arial' font-size='14' font-weight='bold' fill='%232563eb'%3EPerson (0.89)%3C/text%3E%3Crect x='150' y='260' width='100' height='80' fill='none' stroke='%23f59e0b' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='160' y='285' font-family='Arial' font-size='14' font-weight='bold' fill='%23f59e0b'%3EBike (0.87)%3C/text%3E%3Crect x='380' y='280' width='120' height='90' fill='none' stroke='%23ec4899' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='390' y='305' font-family='Arial' font-size='14' font-weight='bold' fill='%23ec4899'%3ESign (0.76)%3C/text%3E%3Crect x='20' y='30' width='80' height='60' fill='none' stroke='%238b5cf6' stroke-width='3' stroke-dasharray='8 4'/%3E%3Ctext x='30' y='55' font-family='Arial' font-size='14' font-weight='bold' fill='%238b5cf6'%3ETree (0.82)%3C/text%3E%3C/svg%3E"
   );
   const [detectionError, setDetectionError] = useState<string | null>(null);
+  const [questionError, setQuestionError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -48,11 +66,14 @@ export default function YoloPage() {
     setValue,
     formState: { errors },
     getValues,
-  } = useForm<DetectionFormData>({
-    defaultValues: {
-      file: null,
-    },
-  });
+  } = useForm<DetectionFormData>();
+
+  const {
+    register: registerQuestion,
+    handleSubmit: handleQuestionSubmit,
+    reset: resetQuestion,
+    formState: { errors: questionErrors },
+  } = useForm<QuestionFormData>();
 
   const { isLoading: messagesLoading, error: messagesError } = useQuery({
     queryKey: ["messages"],
@@ -76,12 +97,38 @@ export default function YoloPage() {
     onError: () => setDetectionError("An error occurred. Please try again."),
   });
 
+  const askGeminiMutation = useMutation<Message, Error, AskGeminiFormData>({
+    mutationFn: async ({ file, detections, question }) => {
+      const response = await askGemini(file, detections, question);
+      return response.data as Message;
+    },
+    onSuccess: () => {
+      setQuestionError(null);
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+      resetQuestion();
+    },
+    onError: () => setQuestionError("An error occurred. Please try again."),
+  });
+
   const onSubmit = async (data: DetectionFormData) => {
     const file = data.file;
     if (file) detectMutation.mutate(file);
   };
 
+  const onQuestionSubmit = async (data: QuestionFormData) => {
+    const file = getValues("file");
+    if (file) {
+      askGeminiMutation.mutate({
+        file,
+        detections,
+        question: data.question.trim(),
+      });
+    }
+  };
+
   const handleFile = (file: File) => {
+    setDetectionError(null);
+    setQuestionError(null);
     const reader = new FileReader();
     reader.onload = (event) => setPreviewImage(event.target?.result as string);
     reader.readAsDataURL(file);
@@ -117,6 +164,8 @@ export default function YoloPage() {
   };
 
   const handleRemoveImage = () => {
+    setDetectionError(null);
+    setQuestionError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setPreviewImage("/dummy-preview-image.png");
     setValue("file", null);
@@ -390,14 +439,47 @@ export default function YoloPage() {
               )}
             </div>
 
-            <div className="qa-input-wrapper">
+            <form
+              className="qa-input-wrapper"
+              onSubmit={handleQuestionSubmit(onQuestionSubmit)}
+            >
               <input
                 type="text"
                 className="qa-input"
                 placeholder="Ask a question about the detected objects..."
+                {...registerQuestion("question", {
+                  required: "Please enter a question",
+                  minLength: {
+                    value: 1,
+                    message: "Question cannot be empty",
+                  },
+                })}
+                disabled={
+                  askGeminiMutation.isPending ||
+                  !getValues("file") ||
+                  detections.length === 0
+                }
               />
-              <button className="qa-submit">Send</button>
-            </div>
+              {questionErrors.question && (
+                <p className="text-sm text-red-600 mt-1">
+                  {questionErrors.question.message}
+                </p>
+              )}
+              {!questionErrors.question && questionError && (
+                <p className="text-sm text-red-600 mt-1">{questionError}</p>
+              )}
+              <button
+                type="submit"
+                className="qa-submit"
+                disabled={
+                  askGeminiMutation.isPending ||
+                  !getValues("file") ||
+                  detections.length === 0
+                }
+              >
+                {askGeminiMutation.isPending ? "Sending..." : "Send"}
+              </button>
+            </form>
           </div>
         </div>
       </main>
