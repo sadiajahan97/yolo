@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getProfile, Profile } from "@/api";
 import { getInitials } from "@/utils";
 import { useProfile } from "@/app/contexts/profile";
+import { useRouter } from "next/navigation";
 
 export const Header = () => {
   const { profile, setProfile } = useProfile();
@@ -17,6 +18,13 @@ export const Header = () => {
     },
     enabled: !profile,
   });
+
+  const router = useRouter();
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("access-token");
+    router.push("/");
+  };
 
   return (
     <header className="header">
@@ -62,7 +70,9 @@ export const Header = () => {
               </div>
             </div>
           )}
-          <button className="logout-btn">Logout</button>
+          <button className="logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
         </div>
       </div>
     </header>

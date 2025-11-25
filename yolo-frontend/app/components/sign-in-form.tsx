@@ -30,7 +30,7 @@ export const SignInForm = () => {
   const signInMutation = useMutation({
     mutationFn: (data: SignInFormData) => signIn(data.email, data.password),
     onSuccess: (response) => {
-      localStorage.setItem("access-token", response.data.access_token);
+      sessionStorage.setItem("access-token", response.data.access_token);
       setError(null);
       reset();
       router.push("/yolo");
