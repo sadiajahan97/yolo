@@ -16,7 +16,7 @@ export default function AuthPage() {
   const handleSwitchTab = (tab: 0 | 1) => setActiveTab(tab);
 
   return (
-    <main>
+    <main className="min-h-screen flex items-center justify-center p-5 bg-[linear-gradient(127deg,#0f172a_0%,#1e293b_47%,#334155_100%)] [@media(max-width:480px)]:p-0">
       <div className="flex max-w-[1100px] w-full bg-white rounded-[16px] overflow-hidden shadow-[0_24px_48px_rgba(0,0,0,0.24)] [@media(max-width:968px)]:flex-col [@media(max-width:480px)]:rounded-none">
         <div className="relative flex-1 flex flex-col justify-between text-white bg-gradient-[165deg,#2563eb_0%,#1e40af_100%] overflow-hidden [@media(max-width:968px)]:p-[40px_30px] [@media(max-width:480px)]:p-[30px_20px] p-[60px_50px]">
           <div className="absolute top-[-50%] right-[-20%] w-[400px] h-[400px] bg-white/8 rounded-full pointer-events-none" />

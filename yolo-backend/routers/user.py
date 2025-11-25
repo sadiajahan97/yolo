@@ -22,7 +22,10 @@ async def get_profile(
                 detail="Profile not found"
             )
         
-        return profile.model_dump(exclude={"hashedPassword"})
+        return {
+            "email": profile.email,
+            "name": profile.name
+        }
     
     except HTTPException:
         raise
@@ -42,7 +45,14 @@ async def get_messages(
             order={"createdAt": "asc"}
         )
         
-        return [message.model_dump() for message in messages]
+        return [
+            {
+                "id": message.id,
+                "content": message.content,
+                "role": message.role
+            }
+            for message in messages
+        ]
     
     except HTTPException:
         raise
