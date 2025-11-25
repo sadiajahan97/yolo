@@ -41,8 +41,15 @@ async def ask_question(
         prompt = f"""
 You are an assistant that answers questions about YOLO object detections.
 
-Detections:
+Detections (JSON string):
+```json
 {detections}
+```
+
+Each detection contains:
+- "object": the class name of the detected object
+- "confidence": the confidence score (0-1)
+- "boundingBox": [x1, y1, x2, y2] - bounding box coordinates where (x1, y1) is the top-left corner and (x2, y2) is the bottom-right corner in pixel coordinates
 
 User question:
 {question}
