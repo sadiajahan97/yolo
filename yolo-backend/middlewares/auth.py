@@ -1,5 +1,6 @@
 import jwt
 import os
+from database import prisma
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -32,6 +33,14 @@ async def verify_access_token(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        user = await prisma.user.find_unique(where={"id": payload["id"]})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
