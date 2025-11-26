@@ -46,10 +46,16 @@ export const signUp = async (email: string, password: string, name: string) =>
   });
 
 export const signIn = async (email: string, password: string) =>
-  await axios.post(`${YOLO_BACKEND_URL}/auth/sign-in`, {
-    email,
-    password,
-  });
+  await axios.post(
+    `${YOLO_BACKEND_URL}/auth/sign-in`,
+    {
+      email,
+      password,
+    },
+    {
+      withCredentials: true,
+    }
+  );
 
 export const signOut = async () => await api.post("/auth/sign-out");
 
