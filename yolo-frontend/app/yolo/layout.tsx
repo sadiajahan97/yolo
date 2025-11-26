@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "AI Vision Platform - Login",
+  title: "AI Vision Platform - Dashboard",
 };
 
 export default function YoloLayout({

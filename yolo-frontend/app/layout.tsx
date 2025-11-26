@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AI Vision Platform - Dashboard",
+  title: "AI Vision Platform - Login",
 };
 
 export default function AuthLayout({
