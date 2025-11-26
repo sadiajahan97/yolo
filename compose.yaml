@@ -2,7 +2,7 @@ services:
   app:
     depends_on:
       api:
-        condition: service_healthy
+        condition: service_started
     build:
       context: ./yolo-frontend
       args:
@@ -17,7 +17,7 @@ services:
   api:
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_started
     build: ./yolo-backend
     environment:
       DATABASE_URL: postgres://postgres:p0stgr3s@db:5432/yolo
@@ -41,6 +41,7 @@ services:
     volumes:
       - db:/var/lib/postgresql/data
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: p0stgr3s
       POSTGRES_DB: yolo
     healthcheck:
