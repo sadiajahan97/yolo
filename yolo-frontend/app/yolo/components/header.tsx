@@ -1,7 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { getProfile, Profile } from "@/api";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getProfile, Profile, signOut } from "@/api";
 import { getInitials } from "@/utils";
 import { useProfile } from "@/app/contexts/profile";
 import { useRouter } from "next/navigation";
@@ -21,10 +21,19 @@ export const Header = () => {
 
   const router = useRouter();
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("access-token");
-    router.push("/");
-  };
+  const signOutMutation = useMutation({
+    mutationFn: signOut,
+    onSuccess: () => {
+      setProfile(null);
+      router.push("/");
+    },
+    onError: () => {
+      setProfile(null);
+      router.push("/");
+    },
+  });
+
+  const handleLogout = () => signOutMutation.mutate();
 
   return (
     <header className="header">
@@ -54,8 +63,12 @@ export const Header = () => {
               </div>
             </div>
           )}
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
+          <button
+            className="logout-btn"
+            onClick={handleLogout}
+            disabled={signOutMutation.isPending}
+          >
+            {signOutMutation.isPending ? "Logging out..." : "Logout"}
           </button>
         </div>
       </div>

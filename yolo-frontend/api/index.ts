@@ -20,16 +20,11 @@ export interface Profile {
 
 const api = axios.create({
   baseURL: YOLO_BACKEND_URL,
+  withCredentials: true,
 });
 
 api.interceptors.request.use(
-  (config) => {
-    if (typeof window !== "undefined") {
-      const token = sessionStorage.getItem("access-token");
-      if (token) config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
+  (config) => config,
   (error) => Promise.reject(error)
 );
 
@@ -55,6 +50,8 @@ export const signIn = async (email: string, password: string) =>
     email,
     password,
   });
+
+export const signOut = async () => await api.post("/auth/sign-out");
 
 export const getProfile = async () => await api.get("/user/profile");
 

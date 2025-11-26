@@ -2,17 +2,18 @@ import jwt
 import os
 from database import prisma
 from dotenv import load_dotenv
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import HTTPException, Request, status
 
 load_dotenv()
 
-security = HTTPBearer()
-
-async def verify_access_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> dict:
-    token = credentials.credentials
+async def verify_access_token(request: Request) -> dict:
+    token = request.cookies.get("access_token")
+    
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Access token not found in cookies",
+        )
     jwt_secret = os.getenv("JWT_SECRET_KEY")
     
     if not jwt_secret:
@@ -33,7 +34,6 @@ async def verify_access_token(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload",
-                headers={"WWW-Authenticate": "Bearer"},
             )
         
         user = await prisma.user.find_unique(where={"id": payload["id"]})
@@ -41,7 +41,6 @@ async def verify_access_token(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found",
-                headers={"WWW-Authenticate": "Bearer"},
             )
         
         return {
@@ -53,21 +52,18 @@ async def verify_access_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
-            headers={"WWW-Authenticate": "Bearer"},
         )
     
     except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication token",
-            headers={"WWW-Authenticate": "Bearer"},
         )
-
+    
     except HTTPException:
         raise
     except Exception as exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Could not validate credentials: {str(exception)}",
-            headers={"WWW-Authenticate": "Bearer"},
         )

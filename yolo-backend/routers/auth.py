@@ -4,7 +4,7 @@ import os
 from database import prisma
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, Body, HTTPException, Response, status
 from pydantic import EmailStr
 
 load_dotenv()
@@ -52,6 +52,7 @@ async def sign_up(
 
 @router.post("/sign-in")
 async def sign_in(
+    response: Response,
     email: EmailStr = Body(...),
     password: str = Body(...)
 ):
@@ -95,8 +96,41 @@ async def sign_in(
             algorithm="HS256"
         )
         
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            max_age=86400,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            path="/"
+        )
+        
         return {
-            "access_token": access_token
+            "message": "Sign in successful"
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred: {str(exception)}"
+        )
+
+@router.post("/sign-out")
+async def sign_out(response: Response):
+    try:
+        response.delete_cookie(
+            key="access_token",
+            path="/",
+            samesite="none",
+            secure=True,
+            httponly=True
+        )
+        
+        return {
+            "message": "Sign out successful"
         }
     
     except HTTPException:
