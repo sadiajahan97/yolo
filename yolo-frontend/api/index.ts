@@ -32,25 +32,36 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401) {
-      if (typeof window !== "undefined") window.location.href = "/";
+      if (typeof window !== "undefined") window.location.href = "/auth";
     }
     return Promise.reject(error);
   }
 );
 
 export const signUp = async (email: string, password: string, name: string) =>
-  await axios.post(`${YOLO_BACKEND_URL}/auth/sign-up`, {
-    email,
-    password,
-    name,
-  });
+  await axios.post(
+    `${YOLO_BACKEND_URL}/auth/sign-up`,
+    {
+      email,
+      password,
+      name,
+    },
+    {
+      withCredentials: true,
+    }
+  );
 
-export const signIn = async (email: string, password: string) =>
+export const signIn = async (
+  email: string,
+  password: string,
+  remember: boolean = false
+) =>
   await axios.post(
     `${YOLO_BACKEND_URL}/auth/sign-in`,
     {
       email,
       password,
+      remember,
     },
     {
       withCredentials: true,

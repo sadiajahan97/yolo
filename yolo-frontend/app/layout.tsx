@@ -12,10 +12,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AI Vision Platform - Login",
+  title: "AI Vision Platform - Dashboard",
 };
 
-export default function AuthLayout({
+export default function DashboardLayout({
   children,
 }: Readonly<{
   children: ReactNode;

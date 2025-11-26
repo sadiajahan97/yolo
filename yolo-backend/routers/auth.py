@@ -16,6 +16,7 @@ router = APIRouter(
 
 @router.post("/sign-up", status_code=status.HTTP_201_CREATED)
 async def sign_up(
+    response: Response,
     email: EmailStr = Body(...),
     password: str = Body(...),
     name: str = Body(...)
@@ -30,12 +31,43 @@ async def sign_up(
         
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         
-        await prisma.user.create(
+        user = await prisma.user.create(
             data={
                 "email": email,
                 "hashedPassword": hashed_password,
                 "name": name
             }
+        )
+        
+        jwt_secret = os.getenv("JWT_SECRET_KEY")
+        if not jwt_secret:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="JWT secret key not configured"
+            )
+        
+        expiration_time = datetime.now(timezone.utc) + timedelta(hours=24)
+        
+        payload = {
+            "id": user.id,
+            "email": user.email,
+            "exp": int(expiration_time.timestamp())
+        }
+        
+        access_token = jwt.encode(
+            payload,
+            jwt_secret,
+            algorithm="HS256"
+        )
+        
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            max_age=86400,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            path="/"
         )
         
         return {
@@ -54,7 +86,8 @@ async def sign_up(
 async def sign_in(
     response: Response,
     email: EmailStr = Body(...),
-    password: str = Body(...)
+    password: str = Body(...),
+    remember: bool = Body(False)
 ):
     try:
         user = await prisma.user.find_unique(where={"email": email})
@@ -82,7 +115,12 @@ async def sign_in(
                 detail="JWT secret key not configured"
             )
         
-        expiration_time = datetime.now(timezone.utc) + timedelta(hours=24)
+        if remember:
+            expiration_time = datetime.now(timezone.utc) + timedelta(days=7)
+            max_age = 7 * 24 * 3600
+        else:
+            expiration_time = datetime.now(timezone.utc) + timedelta(hours=24)
+            max_age = 24 * 3600
         
         payload = {
             "id": user.id,
@@ -99,7 +137,7 @@ async def sign_in(
         response.set_cookie(
             key="access_token",
             value=access_token,
-            max_age=86400,
+            max_age=max_age,
             httponly=True,
             secure=True,
             samesite="none",

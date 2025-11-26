@@ -10,6 +10,7 @@ import { AxiosError } from "axios";
 interface SignInFormData {
   email: string;
   password: string;
+  remember: boolean;
 }
 
 export const SignInForm = () => {
@@ -28,11 +29,12 @@ export const SignInForm = () => {
   const handleToggleShowPassword = () => setShowPassword(!showPassword);
 
   const signInMutation = useMutation({
-    mutationFn: (data: SignInFormData) => signIn(data.email, data.password),
+    mutationFn: (data: SignInFormData) =>
+      signIn(data.email, data.password, data.remember),
     onSuccess: () => {
       setError(null);
       reset();
-      router.push("/yolo");
+      router.push("/");
     },
     onError: (error: AxiosError) => {
       if (error?.response?.status === 401) {
@@ -139,6 +141,7 @@ export const SignInForm = () => {
           <input
             type="checkbox"
             id="remember"
+            {...register("remember")}
             className="w-[18px] h-[18px] mr-2 cursor-pointer accent-[#2563eb] focus:outline-none focus:border-[#2563eb] focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)]"
           />
           <label

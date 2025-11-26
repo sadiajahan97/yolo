@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { signUp } from "@/api";
 import { AxiosError } from "axios";
+import { useRouter } from "next/navigation";
 
 interface SignUpFormData {
   name: string;
@@ -17,7 +18,6 @@ export const SignUpForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const {
     register,
@@ -26,6 +26,8 @@ export const SignUpForm = () => {
     getValues,
     reset,
   } = useForm<SignUpFormData>();
+
+  const router = useRouter();
 
   const handleToggleShowPassword = () => setShowPassword(!showPassword);
 
@@ -37,11 +39,10 @@ export const SignUpForm = () => {
       signUp(data.email, data.password, data.name),
     onSuccess: () => {
       setError(null);
-      setSuccess("Account created successfully");
       reset();
+      router.push("/");
     },
     onError: (error: AxiosError) => {
-      setSuccess(null);
       if (error?.response?.status === 409) {
         setError("Email already registered");
       } else {
@@ -61,11 +62,6 @@ export const SignUpForm = () => {
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-600 rounded-[10px]">
           <p className="text-sm text-red-600">{error}</p>
-        </div>
-      )}
-      {success && (
-        <div className="mb-4 p-3 bg-red-50 border border-green-600 rounded-[10px]">
-          <p className="text-sm text-green-600">{success}</p>
         </div>
       )}
       <div className="mb-[22px]">

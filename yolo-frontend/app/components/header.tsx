@@ -25,11 +25,11 @@ export const Header = () => {
     mutationFn: signOut,
     onSuccess: () => {
       setProfile(null);
-      router.push("/");
+      router.push("/auth");
     },
     onError: () => {
       setProfile(null);
-      router.push("/");
+      router.push("/auth");
     },
   });
 
