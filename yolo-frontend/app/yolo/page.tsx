@@ -44,7 +44,7 @@ interface AskGeminiFormData {
 }
 
 export default function YoloPage() {
-  const [previewImage, setPreviewImage] = useState("/dummy-preview-image.png");
+  const [previewImage, setPreviewImage] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [sortColumn, setSortColumn] = useState<0 | 1 | 2 | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -166,7 +166,7 @@ export default function YoloPage() {
     setDetectionError(null);
     setQuestionError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-    setPreviewImage("/dummy-preview-image.png");
+    setPreviewImage("");
     setValue("file", null);
     setDetections([]);
     setAnnotatedImage(
@@ -261,11 +261,13 @@ export default function YoloPage() {
           <div className={`image-preview ${previewImage ? "active" : ""}`}>
             <div className="preview-container">
               <div className="preview-image-wrapper">
-                <img
-                  src={previewImage}
-                  alt="Preview"
-                  className="preview-image"
-                />
+                {previewImage && (
+                  <img
+                    src={previewImage}
+                    alt="Preview"
+                    className="preview-image"
+                  />
+                )}
               </div>
               {errors.file && (
                 <p className="mt-1 text-sm text-red-600">
