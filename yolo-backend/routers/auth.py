@@ -4,7 +4,8 @@ import os
 from database import prisma
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
-from fastapi import APIRouter, Body, HTTPException, Response, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Response, status
+from middlewares import verify_access_token
 from pydantic import EmailStr
 
 load_dotenv()
@@ -13,6 +14,25 @@ router = APIRouter(
     prefix="/auth",
     tags=["Auth"]
 )
+
+@router.get("/check")
+async def check_auth(user: dict = Depends(verify_access_token)):
+    try:
+        return {
+            "authenticated": True,
+            "user": {
+                "id": user["id"],
+                "email": user["email"]
+            }
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred: {str(exception)}"
+        )
 
 @router.post("/sign-up", status_code=status.HTTP_201_CREATED)
 async def sign_up(

@@ -1,11 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { checkAuth } from "@/api";
 import { SignInForm } from "./components/sign-in-form";
 import { SignUpForm } from "./components/sign-up-form";
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<0 | 1>(0);
+
+  const router = useRouter();
+
+  const { data, isSuccess } = useQuery({
+    queryKey: ["check-auth"],
+    queryFn: async () => {
+      const response = await checkAuth();
+      return response.data;
+    },
+  });
+
+  useEffect(() => {
+    if (isSuccess && data?.authenticated) router.push("/");
+  }, [isSuccess, data, router]);
 
   const authTitle = activeTab === 0 ? "Welcome Back" : "Create Account";
   const authSubtitle =

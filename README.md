@@ -10,6 +10,8 @@ A full-stack AI web application that enables users to upload images, perform obj
 - Password hashing using bcrypt
 - JWT-based authentication with access tokens
 - Protected routes requiring authentication
+- Automatic authentication check on auth page (redirects authenticated users)
+- "Remember me" option extends token expiration to 7 days
 
 ### 2. Image Upload & Object Detection
 
@@ -85,12 +87,13 @@ docker compose version
 
    **How to obtain API keys**:
 
-   - **Gemini API Key**: 
+   - **Gemini API Key**:
+
      - Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
      - Sign in with your Google account
      - Click "Create API Key" and copy the generated key
-   
-   - **JWT Secret Key**: 
+
+   - **JWT Secret Key**:
      - Generate a secure random string using:
        ```bash
        openssl rand -hex 32
@@ -100,6 +103,7 @@ docker compose version
 3. **Verify Docker Compose configuration**:
 
    The `compose.yaml` file in the project root configures three services:
+
    - `app` (Frontend - Next.js)
    - `api` (Backend - FastAPI)
    - `db` (Database - PostgreSQL)
@@ -107,6 +111,7 @@ docker compose version
 4. **Access the application**:
 
    After starting the services (see Docker instructions below), access:
+
    - **Frontend**: http://localhost:3000
    - **Backend API**: http://localhost:8000
    - **API Documentation**: http://localhost:8000/docs (FastAPI Swagger UI)
@@ -128,11 +133,30 @@ docker compose up
 ```
 
 This command will:
+
 - Build Docker images for frontend and backend (if not already built)
 - Start PostgreSQL database container
 - Run database migrations automatically
 - Start all three services (frontend, backend, database)
 - Display logs from all services in the terminal
+
+### Clean Rebuild Script
+
+For a complete clean rebuild (useful when troubleshooting or after major changes), use the provided `run.sh` script:
+
+```bash
+./run.sh
+```
+
+This script performs the following operations:
+
+1. Stops all running containers and removes volumes (`docker compose down --volumes`)
+2. Prunes unused Docker volumes (`docker volume prune --force`)
+3. Prunes unused Docker system resources (`docker system prune --force`)
+4. Rebuilds all images without cache (`docker compose build --no-cache`)
+5. Starts all services (`docker compose up`)
+
+**Note**: This script will delete all database data. Use it when you want a completely fresh start or are experiencing persistent issues that require clearing all cached data and volumes.
 
 ### Running in Background (Detached Mode)
 
@@ -215,7 +239,7 @@ docker system prune
 
 ```yaml
 ports:
-  - "3001:3000"  # Change host port from 3000 to 3001
+  - "3001:3000" # Change host port from 3000 to 3001
 ```
 
 **Build failures**: Clear Docker cache and rebuild:
@@ -264,12 +288,14 @@ The application follows a **three-tier microservices architecture** with clear s
 #### Frontend: Next.js 16 with TypeScript
 
 **Why Next.js?**
+
 - **Server-Side Rendering (SSR)**: Improves initial page load performance and SEO
 - **App Router**: Modern file-based routing with React Server Components support
 - **Built-in Optimization**: Automatic code splitting, image optimization, and performance enhancements
 - **TypeScript Support**: Native TypeScript support for type safety and better developer experience
 
 **Additional Frontend Technologies**:
+
 - **Tailwind CSS**: Utility-first CSS framework for rapid, responsive UI development
 - **React Query**: Efficient data fetching, caching, and synchronization with backend
 - **React Hook Form**: Performant form management with minimal re-renders
@@ -278,12 +304,14 @@ The application follows a **three-tier microservices architecture** with clear s
 #### Backend: FastAPI (Python)
 
 **Why FastAPI?**
+
 - **High Performance**: Async/await support makes it ideal for I/O-bound operations (image processing, API calls)
 - **Automatic API Documentation**: Built-in Swagger/OpenAPI UI at `/docs` endpoint
 - **Type Validation**: Pydantic models provide runtime type checking and validation
 - **Python Ecosystem**: Easy integration with ML libraries (Ultralytics, PIL) and AI APIs (Google Gemini)
 
 **Backend Components**:
+
 - **Ultralytics YOLO v8**: State-of-the-art object detection model running locally in Docker
 - **Google Gemini 2.5 Flash**: Multimodal AI model for context-aware Q&A responses
 - **Prisma ORM**: Type-safe database queries with automatic migrations
@@ -293,11 +321,13 @@ The application follows a **three-tier microservices architecture** with clear s
 #### Database: PostgreSQL with Prisma
 
 **Why PostgreSQL?**
+
 - **Relational Database**: Well-suited for structured user and message data
 - **ACID Compliance**: Ensures data integrity for authentication and chat history
 - **Mature Ecosystem**: Extensive tooling and community support
 
 **Why Prisma?**
+
 - **Type Safety**: Generates TypeScript-like types for Python, reducing runtime errors
 - **Migration System**: Version-controlled schema changes with automatic migration generation
 - **Developer Experience**: Intuitive query API and excellent documentation
@@ -305,11 +335,13 @@ The application follows a **three-tier microservices architecture** with clear s
 #### Containerization: Docker & Docker Compose
 
 **Why Docker?**
+
 - **Consistency**: Ensures the application runs identically across different environments
 - **Isolation**: Each service runs in its own container with isolated dependencies
 - **Portability**: Easy deployment to any Docker-compatible platform (local, cloud, CI/CD)
 
 **Docker Compose Benefits**:
+
 - **Single Command Deployment**: `docker compose up` starts the entire stack
 - **Service Orchestration**: Automatic dependency management and health checks
 - **Volume Management**: Persistent storage for database data
@@ -317,16 +349,19 @@ The application follows a **three-tier microservices architecture** with clear s
 
 ### Security Architecture
 
-1. **Password Security**: 
+1. **Password Security**:
+
    - Passwords are hashed using bcrypt with automatic salt generation
    - Never stored or transmitted in plain text
 
 2. **Authentication**:
+
    - JWT tokens stored in HTTP-only cookies (prevents XSS attacks)
    - Tokens expire after 24 hours (configurable)
    - Secure flag enabled for HTTPS environments
 
 3. **API Security**:
+
    - Protected endpoints require valid JWT tokens
    - CORS configured to allow only frontend origin
    - Environment variables for sensitive configuration (API keys, secrets)
@@ -339,14 +374,20 @@ The application follows a **three-tier microservices architecture** with clear s
 ### Data Flow Architecture
 
 **Authentication Flow**:
+
 ```
 User → Frontend → POST /auth/sign-up → Backend
                                     ├─ Hash password (bcrypt)
                                     ├─ Create user (Prisma)
                                     └─ Generate JWT → Set cookie → Frontend
+
+Frontend → GET /auth/check → Backend
+                        ├─ Verify JWT token
+                        └─ Return user info → Frontend (redirects if authenticated)
 ```
 
 **Object Detection Flow**:
+
 ```
 User uploads image → Frontend → POST /yolo/detect → Backend
                                               ├─ Load YOLO model
@@ -356,6 +397,7 @@ User uploads image → Frontend → POST /yolo/detect → Backend
 ```
 
 **Q&A Flow**:
+
 ```
 User asks question → Frontend → POST /gemini/ask → Backend
                                             ├─ Load image + detections
@@ -378,6 +420,7 @@ User asks question → Frontend → POST /gemini/ask → Backend
 yolo/
 ├── compose.yaml              # Docker Compose configuration
 ├── README.md                 # This file
+├── run.sh                    # Clean rebuild script (stops containers, removes volumes, rebuilds)
 ├── yolo-backend/             # Backend service
 │   ├── Dockerfile            # Backend container definition
 │   ├── entrypoint.sh         # Startup script (runs migrations)
@@ -429,13 +472,21 @@ yolo/
 
 ### Authentication
 
+- `GET /auth/check` - Check authentication status (requires authentication)
+
+  - Returns: `{ authenticated: true, user: { id, email } }`
+  - Used by frontend to verify if user is logged in and redirect accordingly
+
 - `POST /auth/sign-up` - Create new user account
+
   - Body: `{ email, password, name }`
   - Returns: Success message, sets HTTP-only cookie with JWT token
 
 - `POST /auth/sign-in` - Login and get access token
+
   - Body: `{ email, password, remember? }`
   - Returns: Success message, sets HTTP-only cookie with JWT token
+  - If `remember` is `true`, token expires in 7 days; otherwise expires in 24 hours
 
 - `POST /auth/sign-out` - Logout (clears authentication cookie)
 
@@ -454,6 +505,7 @@ yolo/
 ### User Management
 
 - `GET /user/profile` - Get current user profile (requires authentication)
+
   - Returns: `{ email: string, name: string }`
 
 - `GET /user/messages` - Get chat message history (requires authentication)
@@ -468,10 +520,11 @@ yolo/
 If ports 3000, 8000, or 5432 are already in use:
 
 1. Identify the process using the port:
+
    ```bash
    # macOS/Linux
    lsof -i :3000
-   
+
    # Windows
    netstat -ano | findstr :3000
    ```

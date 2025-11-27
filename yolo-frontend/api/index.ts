@@ -32,7 +32,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401) {
-      if (typeof window !== "undefined") window.location.href = "/auth";
+      if (!error?.config?.url?.includes("/auth/check")) {
+        if (typeof window !== "undefined") window.location.href = "/auth";
+      }
     }
     return Promise.reject(error);
   }
@@ -69,6 +71,8 @@ export const signIn = async (
   );
 
 export const signOut = async () => await api.post("/auth/sign-out");
+
+export const checkAuth = async () => await api.get("/auth/check");
 
 export const getProfile = async () => await api.get("/user/profile");
 
