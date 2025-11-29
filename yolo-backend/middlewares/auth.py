@@ -7,25 +7,29 @@ from fastapi import HTTPException, Request, status
 load_dotenv()
 
 async def verify_access_token(request: Request) -> dict:
-    token = request.cookies.get("access_token")
+    authorization = request.headers.get("Authorization")
+    token = None
+    
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ")[1]
     
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Access token not found in cookies",
+            detail="Access token not found in Authorization header",
         )
-    jwt_secret = os.getenv("JWT_SECRET_KEY")
+    access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
     
-    if not jwt_secret:
+    if not access_token_secret:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="JWT secret key not configured"
+            detail="Access token secret not configured"
         )
     
     try:
         payload = jwt.decode(
             token,
-            jwt_secret,
+            access_token_secret,
             algorithms=["HS256"],
             options={"verify_exp": True}
         )

@@ -37,7 +37,8 @@ export const SignUpForm = () => {
   const signUpMutation = useMutation({
     mutationFn: (data: SignUpFormData) =>
       signUp(data.email, data.password, data.name),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      sessionStorage.setItem("access-token", response.data.accessToken);
       setError(null);
       reset();
       router.push("/");

@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getProfile, Profile, signOut } from "@/api";
+import { getProfile, signOut } from "@/api";
 import { getInitials } from "@/utils";
-import { useProfile } from "@/app/contexts/profile";
+import { useProfile, Profile } from "@/app/contexts/profile";
 import { useRouter } from "next/navigation";
 
 export const Header = () => {
@@ -24,10 +24,12 @@ export const Header = () => {
   const signOutMutation = useMutation({
     mutationFn: signOut,
     onSuccess: () => {
+      sessionStorage.removeItem("access-token");
       setProfile(null);
       router.push("/auth");
     },
     onError: () => {
+      sessionStorage.removeItem("access-token");
       setProfile(null);
       router.push("/auth");
     },

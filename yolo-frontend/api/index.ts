@@ -1,4 +1,5 @@
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 const YOLO_BACKEND_URL = process.env.NEXT_PUBLIC_YOLO_BACKEND_URL;
 
@@ -8,75 +9,97 @@ export interface Detection {
   boundingBox: [number, number, number, number];
 }
 
-export interface Message {
-  content: string;
-  role: "user" | "assistant";
-}
-
-export interface Profile {
-  name: string;
-  email: string;
-}
-
 const api = axios.create({
   baseURL: YOLO_BACKEND_URL,
-  withCredentials: true,
 });
 
 api.interceptors.request.use(
-  (config) => config,
+  async (config) => {
+    if (typeof window !== "undefined") {
+      const token = sessionStorage.getItem("access-token");
+      if (token) {
+        try {
+          const decoded = jwtDecode<{ exp: number }>(token);
+          const currentTime = Math.floor(Date.now() / 1000);
+          const timeUntilExpiry = decoded.exp - currentTime;
+
+          if (timeUntilExpiry < 120) {
+            try {
+              const response = await refresh();
+              const newToken = response.data.accessToken;
+              sessionStorage.setItem("access-token", newToken);
+              config.headers.Authorization = `Bearer ${newToken}`;
+            } catch {
+              config.headers.Authorization = `Bearer ${token}`;
+            }
+          } else config.headers.Authorization = `Bearer ${token}`;
+        } catch {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      }
+    }
+    return config;
+  },
   (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401) {
-      if (!error?.config?.url?.includes("/auth/check")) {
-        if (typeof window !== "undefined") window.location.href = "/auth";
-      }
-    }
-    return Promise.reject(error);
+    if (error?.response?.status === 401 && typeof window !== "undefined")
+      window.location.href = "/auth";
+    else return Promise.reject(error);
+  }
+);
+
+const authApi = axios.create({
+  baseURL: `${YOLO_BACKEND_URL}/auth`,
+  withCredentials: true,
+});
+
+authApi.interceptors.request.use(
+  (config) => config,
+  (error) => Promise.reject(error)
+);
+
+authApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      error?.response?.status === 401 &&
+      !error?.config?.url?.includes("/check") &&
+      typeof window !== "undefined"
+    )
+      window.location.href = "/auth";
+    else return Promise.reject(error);
   }
 );
 
 export const signUp = async (email: string, password: string, name: string) =>
-  await axios.post(
-    `${YOLO_BACKEND_URL}/auth/sign-up`,
-    {
-      email,
-      password,
-      name,
-    },
-    {
-      withCredentials: true,
-    }
-  );
+  await authApi.post("/sign-up", {
+    email,
+    password,
+    name,
+  });
 
 export const signIn = async (
   email: string,
   password: string,
   remember: boolean = false
 ) =>
-  await axios.post(
-    `${YOLO_BACKEND_URL}/auth/sign-in`,
-    {
-      email,
-      password,
-      remember,
-    },
-    {
-      withCredentials: true,
-    }
-  );
+  await authApi.post("/sign-in", {
+    email,
+    password,
+    remember,
+  });
 
-export const signOut = async () => await api.post("/auth/sign-out");
+export const refresh = async () => await authApi.post("/refresh");
 
-export const checkAuth = async () => await api.get("/auth/check");
+export const signOut = async () => await authApi.post("/sign-out");
+
+export const checkAuth = async () => await authApi.get("/check");
 
 export const getProfile = async () => await api.get("/user/profile");
-
-export const getMessages = async () => await api.get("/user/messages");
 
 export const detectObjects = async (file: File) => {
   const formData = new FormData();

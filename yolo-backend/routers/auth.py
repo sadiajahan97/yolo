@@ -1,11 +1,11 @@
 import bcrypt
 import jwt
 import os
+import uuid
 from database import prisma
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
-from fastapi import APIRouter, Body, Depends, HTTPException, Response, status
-from middlewares import verify_access_token
+from fastapi import APIRouter, Body, HTTPException, Request, Response, status
 from pydantic import EmailStr
 
 load_dotenv()
@@ -16,13 +16,59 @@ router = APIRouter(
 )
 
 @router.get("/check")
-async def check_auth(user: dict = Depends(verify_access_token)):
+async def check_auth(request: Request):
     try:
+        refresh_token = request.cookies.get("refresh_token")
+        
+        if not refresh_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token not found"
+            )
+        
+        refresh_token_secret = os.getenv("REFRESH_TOKEN_SECRET")
+        if not refresh_token_secret:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Refresh token secret not configured"
+            )
+        
+        try:
+            payload = jwt.decode(
+                refresh_token,
+                refresh_token_secret,
+                algorithms=["HS256"],
+                options={"verify_exp": True}
+            )
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token has expired"
+            )
+        except jwt.InvalidTokenError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token"
+            )
+        
+        if "id" not in payload or "email" not in payload or "jti" not in payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token payload"
+            )
+        
+        session = await prisma.session.find_unique(where={"jti": payload["jti"]})
+        if not session:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session not found"
+            )
+        
         return {
             "authenticated": True,
             "user": {
-                "id": user["id"],
-                "email": user["email"]
+                "id": payload["id"],
+                "email": payload["email"]
             }
         }
     
@@ -59,39 +105,71 @@ async def sign_up(
             }
         )
         
-        jwt_secret = os.getenv("JWT_SECRET_KEY")
-        if not jwt_secret:
+        refresh_token_secret = os.getenv("REFRESH_TOKEN_SECRET")
+        access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
+        
+        if not refresh_token_secret:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="JWT secret key not configured"
+                detail="Refresh token secret not configured"
+            )
+        if not access_token_secret:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Access token secret not configured"
             )
         
-        expiration_time = datetime.now(timezone.utc) + timedelta(hours=24)
+        jti = str(uuid.uuid4())
+        refresh_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=20)
         
-        payload = {
+        refresh_payload = {
             "id": user.id,
             "email": user.email,
-            "exp": int(expiration_time.timestamp())
+            "jti": jti,
+            "exp": int(refresh_expiration_time.timestamp())
         }
         
-        access_token = jwt.encode(
-            payload,
-            jwt_secret,
+        refresh_token = jwt.encode(
+            refresh_payload,
+            refresh_token_secret,
             algorithm="HS256"
         )
         
+        await prisma.session.create(
+            data={
+                "userId": user.id,
+                "jti": jti,
+                "exp": int(refresh_expiration_time.timestamp()),
+                "remember": False
+            }
+        )
+        
         response.set_cookie(
-            key="access_token",
-            value=access_token,
-            max_age=86400,
+            key="refresh_token",
+            value=refresh_token,
+            max_age=1200,
             httponly=True,
             secure=True,
             samesite="none",
-            path="/"
+            path="/auth"
+        )
+        
+        access_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=15)
+        access_payload = {
+            "id": user.id,
+            "email": user.email,
+            "exp": int(access_expiration_time.timestamp())
+        }
+        
+        access_token = jwt.encode(
+            access_payload,
+            access_token_secret,
+            algorithm="HS256"
         )
         
         return {
-            "message": "User created successfully"
+            "message": "User created successfully",
+            "accessToken": access_token
         }
     
     except HTTPException:
@@ -128,44 +206,197 @@ async def sign_in(
                 detail="Invalid email or password"
             )
         
-        jwt_secret = os.getenv("JWT_SECRET_KEY")
-        if not jwt_secret:
+        refresh_token_secret = os.getenv("REFRESH_TOKEN_SECRET")
+        access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
+        
+        if not refresh_token_secret:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="JWT secret key not configured"
+                detail="Refresh token secret not configured"
+            )
+        if not access_token_secret:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Access token secret not configured"
             )
         
+        jti = str(uuid.uuid4())
         if remember:
-            expiration_time = datetime.now(timezone.utc) + timedelta(days=7)
-            max_age = 7 * 24 * 3600
+            refresh_expiration_time = datetime.now(timezone.utc) + timedelta(days=30)
+            max_age = 30 * 24 * 3600
         else:
-            expiration_time = datetime.now(timezone.utc) + timedelta(hours=24)
-            max_age = 24 * 3600
+            refresh_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=20)
+            max_age = 20 * 60
         
-        payload = {
+        refresh_payload = {
             "id": user.id,
             "email": user.email,
-            "exp": int(expiration_time.timestamp())
+            "jti": jti,
+            "exp": int(refresh_expiration_time.timestamp())
         }
         
-        access_token = jwt.encode(
-            payload,
-            jwt_secret,
+        refresh_token = jwt.encode(
+            refresh_payload,
+            refresh_token_secret,
             algorithm="HS256"
         )
         
+        await prisma.session.create(
+            data={
+                "userId": user.id,
+                "jti": jti,
+                "exp": int(refresh_expiration_time.timestamp()),
+                "remember": remember
+            }
+        )
+        
         response.set_cookie(
-            key="access_token",
-            value=access_token,
+            key="refresh_token",
+            value=refresh_token,
             max_age=max_age,
             httponly=True,
             secure=True,
             samesite="none",
-            path="/"
+            path="/auth"
+        )
+        
+        access_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=15)
+        access_payload = {
+            "id": user.id,
+            "email": user.email,
+            "exp": int(access_expiration_time.timestamp())
+        }
+        
+        access_token = jwt.encode(
+            access_payload,
+            access_token_secret,
+            algorithm="HS256"
         )
         
         return {
-            "message": "Sign in successful"
+            "message": "Sign in successful",
+            "accessToken": access_token
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred: {str(exception)}"
+        )
+
+@router.post("/refresh")
+async def refresh_access_token(request: Request, response: Response):
+    try:
+        refresh_token = request.cookies.get("refresh_token")
+        
+        if not refresh_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token not found"
+            )
+        
+        refresh_token_secret = os.getenv("REFRESH_TOKEN_SECRET")
+        access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
+        
+        if not refresh_token_secret:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Refresh token secret not configured"
+            )
+        if not access_token_secret:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Access token secret not configured"
+            )
+        
+        try:
+            payload = jwt.decode(
+                refresh_token,
+                refresh_token_secret,
+                algorithms=["HS256"],
+                options={"verify_exp": True}
+            )
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token has expired"
+            )
+        except jwt.InvalidTokenError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token"
+            )
+        
+        if "id" not in payload or "email" not in payload or "jti" not in payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token payload"
+            )
+        
+        session = await prisma.session.find_unique(where={"jti": payload["jti"]})
+        if not session:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session not found"
+            )
+        
+        new_jti = str(uuid.uuid4())
+        
+        if session.remember:
+            refresh_expiration_time = datetime.now(timezone.utc) + timedelta(days=30)
+            max_age = 30 * 24 * 3600
+        else:
+            refresh_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=20)
+            max_age = 20 * 60
+        
+        new_refresh_payload = {
+            "id": payload["id"],
+            "email": payload["email"],
+            "jti": new_jti,
+            "exp": int(refresh_expiration_time.timestamp())
+        }
+        
+        new_refresh_token = jwt.encode(
+            new_refresh_payload,
+            refresh_token_secret,
+            algorithm="HS256"
+        )
+        
+        await prisma.session.update(
+            where={"jti": payload["jti"]},
+            data={
+                "jti": new_jti,
+                "exp": int(refresh_expiration_time.timestamp())
+            }
+        )
+        
+        response.set_cookie(
+            key="refresh_token",
+            value=new_refresh_token,
+            max_age=max_age,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            path="/auth"
+        )
+        
+        access_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=15)
+        access_payload = {
+            "id": payload["id"],
+            "email": payload["email"],
+            "exp": int(access_expiration_time.timestamp())
+        }
+        
+        access_token = jwt.encode(
+            access_payload,
+            access_token_secret,
+            algorithm="HS256"
+        )
+        
+        return {
+            "accessToken": access_token
         }
     
     except HTTPException:
@@ -177,11 +408,29 @@ async def sign_in(
         )
 
 @router.post("/sign-out")
-async def sign_out(response: Response):
+async def sign_out(request: Request, response: Response):
     try:
+        refresh_token = request.cookies.get("refresh_token")
+        
+        if refresh_token:
+            refresh_token_secret = os.getenv("REFRESH_TOKEN_SECRET")
+            if refresh_token_secret:
+                try:
+                    payload = jwt.decode(
+                        refresh_token,
+                        refresh_token_secret,
+                        algorithms=["HS256"],
+                        options={"verify_exp": False}
+                    )
+                    
+                    if "jti" in payload:
+                        await prisma.session.delete(where={"jti": payload["jti"]})
+                except:
+                    pass
+        
         response.delete_cookie(
-            key="access_token",
-            path="/",
+            key="refresh_token",
+            path="/auth",
             samesite="none",
             secure=True,
             httponly=True

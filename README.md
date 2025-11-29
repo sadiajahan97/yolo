@@ -1,132 +1,164 @@
 # AI Image Analysis & Q&A Platform
 
-A full-stack AI web application that enables users to upload images, perform object detection using YOLO (You Only Look Once) models running locally in Docker, visualize detection results in a sortable table, and interact with a Gemini-powered AI assistant to ask questions about the detected objects.
+A full-stack AI web application that enables users to upload images, perform object detection using YOLO (You Only Look Once), and interact with detection results through a Gemini-powered AI assistant.
 
 ## Features
 
-### 1. User Authentication
+- **User Authentication**: Secure login/signup flow with JWT tokens and password hashing
+- **Image Upload & Object Detection**: Upload images and detect objects using YOLO v8n model running locally
+- **Results Visualization**: View annotated images with bounding boxes and a sortable table of detections
+- **AI-Powered Q&A**: Ask questions about detection results using Google's Gemini 2.5 Flash model
 
-- Secure signup and login flow
-- Password hashing using bcrypt
-- JWT-based authentication with access tokens
-- Protected routes requiring authentication
-- Automatic authentication check on auth page (redirects authenticated users)
-- "Remember me" option extends token expiration to 7 days
+## Architecture
 
-### 2. Image Upload & Object Detection
+### Tech Stack
 
-- User-friendly interface for uploading images
-- "Detect Objects" button activates after image selection
-- Backend runs YOLO v8 nano model locally inside Docker container
-- Returns:
-  - Annotated image with bounding boxes drawn
-  - Structured list of detections including:
-    - Class name
-    - Bounding box coordinates (x1, y1, x2, y2)
-    - Confidence score (0-1)
+**Frontend:**
 
-### 3. Results Visualization
+- **Next.js 16** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first CSS framework
+- **React Query (TanStack Query)** - Server state management
+- **Axios** - HTTP client for API requests
+- **React Hook Form** - Form handling and validation
 
-- **Annotated Image Display**: Shows the uploaded image with bounding boxes overlaid
-- **Sortable Results Table**: Displays detection data with columns:
-  - Class name
-  - Bounding box coordinates
-  - Confidence score
-- Table supports sorting by any column (ascending/descending)
+**Backend:**
 
-### 4. Conversational Q&A About Results
+- **FastAPI** - Modern Python web framework
+- **Prisma** - Type-safe ORM for database management
+- **PostgreSQL** - Relational database
+- **Ultralytics YOLO** - Object detection model (YOLOv8n)
+- **Google Gemini 2.5 Flash** - AI assistant for Q&A
+- **JWT** - Token-based authentication
+- **bcrypt** - Password hashing
 
-- Text input interface for asking questions about detections
-- Example questions:
-  - "How many cars are there?"
-  - "What is the highest-confidence object?"
-  - "List all detected objects"
-- Backend integrates with Gemini 2.5 Flash API
-- Chat-style interface displays AI responses
-- AI receives both the image and structured detection data for context-aware responses
+**Infrastructure:**
 
-## Setup Instructions
+- **Docker & Docker Compose** - Containerization and orchestration
+- **PostgreSQL** - Database service
 
-### Prerequisites
+### System Architecture
+
+```
+┌─────────────────┐
+│   Frontend      │  Next.js (Port 3000)
+│   (Next.js)     │
+└────────┬────────┘
+         │ HTTP/REST
+         │
+┌────────▼────────┐
+│    Backend      │  FastAPI (Port 8000)
+│   (FastAPI)     │
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │         │
+┌───▼───┐ ┌──▼──────┐
+│  DB   │ │  YOLO   │
+│(Postgres)│ │  Model  │
+└───────┘ └─────────┘
+         │
+    ┌────▼────┐
+    │ Gemini  │
+    │   API   │
+    └─────────┘
+```
+
+### Technical Choices
+
+1. **FastAPI**: Chosen for its high performance, automatic API documentation, and native async support, which is ideal for handling image uploads and AI model inference.
+
+2. **Prisma**: Provides type-safe database access and migrations, ensuring data integrity and easier schema management.
+
+3. **YOLO v8n (nano)**: Lightweight model suitable for Docker containers while maintaining good detection accuracy. Runs inference locally without external API dependencies.
+
+4. **Gemini 2.5 Flash**: Fast and cost-effective model for conversational Q&A about detection results. Supports multimodal input (image + text).
+
+5. **Next.js App Router**: Modern React framework with server-side rendering capabilities and optimized performance.
+
+6. **JWT with Refresh Tokens**: Stateless authentication with secure token rotation for enhanced security.
+
+## Prerequisites
 
 - **Docker** (version 20.10 or higher)
 - **Docker Compose** (version 2.0 or higher)
 - **Git** (for cloning the repository)
 
-Verify Docker installation:
+## Setup Instructions
+
+### 1. Clone the Repository
 
 ```bash
-docker --version
-docker compose version
+git clone <repository-url>
+cd yolo
 ```
 
-### Step-by-Step Setup
+### 2. Configure Environment Variables
 
-1. **Clone the repository**:
+The application uses environment variables from both `compose.yaml` and `.env` files. Some variables are pre-configured in `compose.yaml`, while others must be set in a `.env` file.
 
-   ```bash
-   git clone <repository-url>
-   cd yolo
-   ```
+#### Environment Variables Already Configured in `compose.yaml`:
 
-2. **Configure environment variables**:
+The following variables are automatically configured in `compose.yaml`:
 
-   Create a `.env` file in the `yolo-backend` directory:
+**Frontend (`app` service):**
 
-   ```bash
-   cd yolo-backend
-   touch .env
-   ```
+- `NEXT_PUBLIC_YOLO_BACKEND_URL`: Backend API URL (default: `http://localhost:8000`)
 
-   Add the following required variables to `.env`:
+**Backend (`api` service):**
 
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
-   JWT_SECRET_KEY=your_jwt_secret_key_here
-   ```
+- `DATABASE_URL`: PostgreSQL connection string (default: `postgres://postgres:p0stgr3s@db:5432/yolo`)
 
-   **How to obtain API keys**:
+**Database (`db` service):**
 
-   - **Gemini API Key**:
+- `POSTGRES_USER`: Database user (default: `postgres`)
+- `POSTGRES_PASSWORD`: Database password (default: `p0stgr3s`)
+- `POSTGRES_DB`: Database name (default: `yolo`)
 
-     - Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
-     - Sign in with your Google account
-     - Click "Create API Key" and copy the generated key
+#### Required Environment Variables in `.env` File:
 
-   - **JWT Secret Key**:
-     - Generate a secure random string using:
-       ```bash
-       openssl rand -hex 32
-       ```
-     - Or use any secure random string generator
+You must create a `.env` file in the `yolo-backend/` directory with the following variables. You can use `yolo-backend/.env.example` as a template:
 
-3. **Verify Docker Compose configuration**:
+- `GEMINI_API_KEY`: Your Google Gemini API key (required for Q&A feature)
+- `ACCESS_TOKEN_SECRET`: Secret key for JWT access tokens (required for authentication)
+- `REFRESH_TOKEN_SECRET`: Secret key for JWT refresh tokens (required for authentication)
 
-   The `compose.yaml` file in the project root configures three services:
+**To configure these variables**, create a `.env` file in the `yolo-backend/` directory:
 
-   - `app` (Frontend - Next.js)
-   - `api` (Backend - FastAPI)
-   - `db` (Database - PostgreSQL)
+```bash
+cd yolo-backend
+cp .env.example .env
+```
 
-4. **Access the application**:
+Then edit `yolo-backend/.env` and replace the placeholder values:
 
-   After starting the services (see Docker instructions below), access:
+```env
+GEMINI_API_KEY=your-gemini-api-key-here
+ACCESS_TOKEN_SECRET=your-access-token-secret-here
+REFRESH_TOKEN_SECRET=your-refresh-token-secret-here
+```
 
-   - **Frontend**: http://localhost:3000
-   - **Backend API**: http://localhost:8000
-   - **API Documentation**: http://localhost:8000/docs (FastAPI Swagger UI)
+**Note**:
 
-**Important Notes**:
+- The `.env` file is automatically loaded by Docker Compose (configured in `compose.yaml`)
+- For production, use strong, randomly generated secrets. You can generate secrets using:
+  ```bash
+  openssl rand -hex 32
+  ```
+- Never commit the `.env` file to version control (it should be in `.gitignore`)
 
-- On first startup, the backend automatically connects to the database, runs Prisma migrations, and initializes the YOLO model
-- The first detection request may take longer (10-30 seconds) as the YOLO model loads into memory
-- Ensure ports 3000, 8000, and 5432 are not already in use by other applications
+### 3. Get a Gemini API Key
 
-## How to Run the App Using Docker
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Create a new API key
+4. Copy the key and add it to `yolo-backend/.env` as `GEMINI_API_KEY`
 
-### Quick Start
+## Running the Application
 
-Run the entire application stack with a single command:
+### Using Docker Compose (Recommended)
+
+The application is designed to run entirely with Docker Compose. Simply execute:
 
 ```bash
 docker compose up
@@ -134,285 +166,81 @@ docker compose up
 
 This command will:
 
-- Build Docker images for frontend and backend (if not already built)
-- Start PostgreSQL database container
-- Run database migrations automatically
-- Start all three services (frontend, backend, database)
-- Display logs from all services in the terminal
+1. Build the frontend and backend Docker images
+2. Start the PostgreSQL database
+3. Run database migrations automatically
+4. Start all services
 
-### Clean Rebuild Script
+The application will be available at:
 
-For a complete clean rebuild (useful when troubleshooting or after major changes), use the provided `run.sh` script:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
 
-```bash
-./run.sh
-```
+### Building from Scratch
 
-This script performs the following operations:
-
-1. Stops all running containers and removes volumes (`docker compose down --volumes`)
-2. Prunes unused Docker volumes (`docker volume prune --force`)
-3. Prunes unused Docker system resources (`docker system prune --force`)
-4. Rebuilds all images without cache (`docker compose build --no-cache`)
-5. Starts all services (`docker compose up`)
-
-**Note**: This script will delete all database data. Use it when you want a completely fresh start or are experiencing persistent issues that require clearing all cached data and volumes.
-
-### Running in Background (Detached Mode)
-
-To run services in the background:
-
-```bash
-docker compose up -d
-```
-
-### Stopping the Application
-
-Stop all running services:
-
-```bash
-docker compose down
-```
-
-To stop and remove all data (including database volumes):
-
-```bash
-docker compose down -v
-```
-
-**Warning**: The `-v` flag will delete all database data. Use with caution.
-
-### Viewing Logs
-
-View logs from all services:
-
-```bash
-docker compose logs -f
-```
-
-View logs from a specific service:
-
-```bash
-docker compose logs -f api      # Backend service
-docker compose logs -f app       # Frontend service
-docker compose logs -f db        # Database service
-```
-
-### Rebuilding After Code Changes
-
-If you've modified the code, rebuild the images:
-
-```bash
-docker compose up --build
-```
-
-Or rebuild specific services:
-
-```bash
-docker compose build api    # Rebuild backend only
-docker compose build app    # Rebuild frontend only
-```
-
-### Useful Docker Commands
-
-```bash
-# Check status of running containers
-docker compose ps
-
-# Restart a specific service
-docker compose restart api
-
-# Execute commands inside a container
-docker compose exec api bash        # Access backend container shell
-docker compose exec db psql -U postgres -d yolo  # Access database
-
-# View resource usage
-docker stats
-
-# Clean up unused Docker resources
-docker system prune
-```
-
-### Troubleshooting Docker Issues
-
-**Port conflicts**: If ports 3000, 8000, or 5432 are in use, modify the port mappings in `compose.yaml`:
-
-```yaml
-ports:
-  - "3001:3000" # Change host port from 3000 to 3001
-```
-
-**Build failures**: Clear Docker cache and rebuild:
+If you need to rebuild the containers:
 
 ```bash
 docker compose build --no-cache
 docker compose up
 ```
 
-**Database connection issues**: Ensure the database container is healthy before the backend starts. The `compose.yaml` includes health checks and dependency management for this.
+### Clean Start (Remove Volumes)
 
-## Architecture and Technical Choices
+To start fresh and remove all data:
 
-### System Architecture
-
-The application follows a **three-tier microservices architecture** with clear separation of concerns:
-
-```
-┌─────────────────┐
-│   Frontend      │  Next.js (Port 3000)
-│   (Next.js)     │  └─ React UI Components
-└────────┬────────┘  └─ API Client Layer
-         │ HTTP/REST
-         │
-┌────────▼────────┐
-│   Backend       │  FastAPI (Port 8000)
-│   (FastAPI)     │  ├─ Authentication Routes
-└────────┬────────┘  ├─ YOLO Detection Routes
-         │           ├─ Gemini Q&A Routes
-         │           └─ User Management Routes
-         │
-┌────────▼────────┐
-│   Database      │  PostgreSQL (Port 5432)
-│   (PostgreSQL)  │  └─ User & Message Storage
-└─────────────────┘
+```bash
+docker compose down --volumes
+docker compose up
 ```
 
-**Service Communication Flow**:
+### Viewing Logs
 
-1. **Frontend → Backend**: RESTful API calls via Axios with cookie-based authentication
-2. **Backend → Database**: Prisma ORM for type-safe database operations
-3. **Backend → External APIs**: Gemini 2.5 Flash API for AI responses
+To view logs from all services:
 
-### Technical Stack Rationale
-
-#### Frontend: Next.js 16 with TypeScript
-
-**Why Next.js?**
-
-- **Server-Side Rendering (SSR)**: Improves initial page load performance and SEO
-- **App Router**: Modern file-based routing with React Server Components support
-- **Built-in Optimization**: Automatic code splitting, image optimization, and performance enhancements
-- **TypeScript Support**: Native TypeScript support for type safety and better developer experience
-
-**Additional Frontend Technologies**:
-
-- **Tailwind CSS**: Utility-first CSS framework for rapid, responsive UI development
-- **React Query**: Efficient data fetching, caching, and synchronization with backend
-- **React Hook Form**: Performant form management with minimal re-renders
-- **Axios**: Promise-based HTTP client with interceptors for authentication handling
-
-#### Backend: FastAPI (Python)
-
-**Why FastAPI?**
-
-- **High Performance**: Async/await support makes it ideal for I/O-bound operations (image processing, API calls)
-- **Automatic API Documentation**: Built-in Swagger/OpenAPI UI at `/docs` endpoint
-- **Type Validation**: Pydantic models provide runtime type checking and validation
-- **Python Ecosystem**: Easy integration with ML libraries (Ultralytics, PIL) and AI APIs (Google Gemini)
-
-**Backend Components**:
-
-- **Ultralytics YOLO v8**: State-of-the-art object detection model running locally in Docker
-- **Google Gemini 2.5 Flash**: Multimodal AI model for context-aware Q&A responses
-- **Prisma ORM**: Type-safe database queries with automatic migrations
-- **JWT Authentication**: Stateless authentication using JSON Web Tokens stored in HTTP-only cookies
-- **bcrypt**: Secure password hashing with salt rounds
-
-#### Database: PostgreSQL with Prisma
-
-**Why PostgreSQL?**
-
-- **Relational Database**: Well-suited for structured user and message data
-- **ACID Compliance**: Ensures data integrity for authentication and chat history
-- **Mature Ecosystem**: Extensive tooling and community support
-
-**Why Prisma?**
-
-- **Type Safety**: Generates TypeScript-like types for Python, reducing runtime errors
-- **Migration System**: Version-controlled schema changes with automatic migration generation
-- **Developer Experience**: Intuitive query API and excellent documentation
-
-#### Containerization: Docker & Docker Compose
-
-**Why Docker?**
-
-- **Consistency**: Ensures the application runs identically across different environments
-- **Isolation**: Each service runs in its own container with isolated dependencies
-- **Portability**: Easy deployment to any Docker-compatible platform (local, cloud, CI/CD)
-
-**Docker Compose Benefits**:
-
-- **Single Command Deployment**: `docker compose up` starts the entire stack
-- **Service Orchestration**: Automatic dependency management and health checks
-- **Volume Management**: Persistent storage for database data
-- **Network Isolation**: Services communicate through an internal Docker network
-
-### Security Architecture
-
-1. **Password Security**:
-
-   - Passwords are hashed using bcrypt with automatic salt generation
-   - Never stored or transmitted in plain text
-
-2. **Authentication**:
-
-   - JWT tokens stored in HTTP-only cookies (prevents XSS attacks)
-   - Tokens expire after 24 hours (configurable)
-   - Secure flag enabled for HTTPS environments
-
-3. **API Security**:
-
-   - Protected endpoints require valid JWT tokens
-   - CORS configured to allow only frontend origin
-   - Environment variables for sensitive configuration (API keys, secrets)
-
-4. **Data Privacy**:
-   - YOLO model runs locally (no external API calls for detection)
-   - User images processed in-memory, not stored on disk
-   - Database connections use internal Docker network (not exposed)
-
-### Data Flow Architecture
-
-**Authentication Flow**:
-
-```
-User → Frontend → POST /auth/sign-up → Backend
-                                    ├─ Hash password (bcrypt)
-                                    ├─ Create user (Prisma)
-                                    └─ Generate JWT → Set cookie → Frontend
-
-Frontend → GET /auth/check → Backend
-                        ├─ Verify JWT token
-                        └─ Return user info → Frontend (redirects if authenticated)
+```bash
+docker compose logs -f
 ```
 
-**Object Detection Flow**:
+To view logs from a specific service:
 
-```
-User uploads image → Frontend → POST /yolo/detect → Backend
-                                              ├─ Load YOLO model
-                                              ├─ Process image
-                                              ├─ Generate detections
-                                              └─ Return annotated image + JSON → Frontend
+```bash
+docker compose logs -f api    # Backend logs
+docker compose logs -f app    # Frontend logs
+docker compose logs -f db     # Database logs
 ```
 
-**Q&A Flow**:
+## Usage
 
-```
-User asks question → Frontend → POST /gemini/ask → Backend
-                                            ├─ Load image + detections
-                                            ├─ Call Gemini API (image + prompt)
-                                            ├─ Save message to database
-                                            └─ Return response → Frontend
-```
+1. **Sign Up**: Create a new account at http://localhost:3000/auth
+2. **Sign In**: Log in with your credentials
+3. **Upload Image**: Click "Choose File" and select an image
+4. **Detect Objects**: Click "Detect Objects" to run YOLO detection
+5. **View Results**: See the annotated image and sortable detection table
+6. **Ask Questions**: Use the Q&A interface to ask questions about the detections (e.g., "How many cars are there?", "What is the highest-confidence object?")
 
-### Scalability Considerations
+## API Endpoints
 
-- **Stateless Backend**: JWT authentication allows horizontal scaling
-- **Database Connection Pooling**: Prisma manages efficient database connections
-- **Async Processing**: FastAPI's async support handles concurrent requests efficiently
-- **Model Caching**: YOLO model loaded once and reused for multiple requests
-- **Container-Based**: Easy to scale individual services independently
+### Authentication
+
+- `POST /auth/sign-up` - Create a new user account
+- `POST /auth/sign-in` - Sign in and receive tokens
+- `POST /auth/sign-out` - Sign out and invalidate tokens
+- `GET /auth/check` - Verify authentication status
+- `POST /auth/refresh` - Refresh access token
+
+### Object Detection
+
+- `POST /yolo/detect` - Upload image and get YOLO detections (requires authentication)
+
+### AI Q&A
+
+- `POST /gemini/ask` - Ask questions about detection results (requires authentication)
+
+### User
+
+- `GET /user/profile` - Get current user profile (requires authentication)
 
 ## Project Structure
 
@@ -420,211 +248,106 @@ User asks question → Frontend → POST /gemini/ask → Backend
 yolo/
 ├── compose.yaml              # Docker Compose configuration
 ├── README.md                 # This file
-├── run.sh                    # Clean rebuild script (stops containers, removes volumes, rebuilds)
+├── run.sh                    # Helper script for clean rebuild
 ├── yolo-backend/             # Backend service
-│   ├── Dockerfile            # Backend container definition
-│   ├── entrypoint.sh         # Startup script (runs migrations)
+│   ├── Dockerfile
+│   ├── entrypoint.sh         # Database migration script
 │   ├── main.py               # FastAPI application entry point
+│   ├── database.py           # Prisma client initialization
 │   ├── requirements.txt      # Python dependencies
-│   ├── database.py           # Prisma database client initialization
-│   ├── models/               # YOLO model files
-│   │   └── yolov8n.pt       # YOLO v8 nano model weights
+│   ├── models/
+│   │   └── yolov8n.pt       # YOLO model file
 │   ├── routers/              # API route handlers
-│   │   ├── auth.py          # Authentication routes (sign-up, sign-in)
+│   │   ├── auth.py          # Authentication routes
 │   │   ├── yolo.py          # Object detection routes
 │   │   ├── gemini.py        # AI Q&A routes
-│   │   └── user.py          # User management routes
-│   ├── middlewares/          # Custom middleware
-│   │   └── auth.py          # JWT token verification middleware
-│   └── prisma/              # Prisma configuration
-│       ├── schema.prisma    # Database schema definition
-│       └── migrations/      # Database migration files
-└── yolo-frontend/            # Frontend service
-    ├── Dockerfile            # Frontend container definition
-    ├── package.json          # Node.js dependencies
-    ├── next.config.ts        # Next.js configuration
-    ├── app/                  # Next.js app directory
-    │   ├── layout.tsx       # Root layout component
-    │   ├── page.tsx         # Main dashboard page
+│   │   └── user.py          # User profile routes
+│   ├── middlewares/         # Custom middleware
+│   │   └── auth.py          # JWT authentication middleware
+│   └── prisma/              # Prisma schema and migrations
+│       └── schema.prisma    # Database schema
+└── yolo-frontend/           # Frontend service
+    ├── Dockerfile
+    ├── package.json         # Node.js dependencies
+    ├── next.config.ts       # Next.js configuration
+    ├── app/                 # Next.js App Router pages
+    │   ├── page.tsx         # Main application page
     │   ├── auth/            # Authentication pages
-    │   │   ├── page.tsx     # Sign-in/Sign-up page
-    │   │   └── components/  # Auth form components
-    │   ├── components/      # Reusable React components
-    │   └── contexts/        # React context providers
+    │   ├── components/      # React components
+    │   └── contexts/        # React contexts
     └── api/                 # API client utilities
-        └── index.ts         # Axios instance and API functions
+        └── index.ts         # Axios instance and API calls
 ```
-
-## Usage Guide
-
-1. **Sign Up**: Create a new account with email, name, and password
-2. **Sign In**: Login with your credentials
-3. **Upload Image**: Click to select an image file or drag and drop
-4. **Detect Objects**: Click "Detect Objects" button to run YOLO detection
-5. **View Results**:
-   - See annotated image with bounding boxes overlaid
-   - Review detection table (sortable by any column: Object, Confidence, Bounding Box)
-6. **Ask Questions**: Type questions in the input box below results
-   - Questions are answered by Gemini AI using both the image and detection data
-   - Example: "How many cars are there?" or "What is the highest-confidence object?"
-
-## API Endpoints
-
-### Authentication
-
-- `GET /auth/check` - Check authentication status (requires authentication)
-
-  - Returns: `{ authenticated: true, user: { id, email } }`
-  - Used by frontend to verify if user is logged in and redirect accordingly
-
-- `POST /auth/sign-up` - Create new user account
-
-  - Body: `{ email, password, name }`
-  - Returns: Success message, sets HTTP-only cookie with JWT token
-
-- `POST /auth/sign-in` - Login and get access token
-
-  - Body: `{ email, password, remember? }`
-  - Returns: Success message, sets HTTP-only cookie with JWT token
-  - If `remember` is `true`, token expires in 7 days; otherwise expires in 24 hours
-
-- `POST /auth/sign-out` - Logout (clears authentication cookie)
-
-### Object Detection
-
-- `POST /yolo/detect` - Upload image and get detections (requires authentication)
-  - Body: `multipart/form-data` with `file` field
-  - Returns: `{ annotatedImage: string, detections: Array<{object, confidence, boundingBox}> }`
-
-### AI Q&A
-
-- `POST /gemini/ask` - Ask question about detections (requires authentication)
-  - Body: `multipart/form-data` with `file`, `detections` (JSON string), `question`
-  - Returns: `{ content: string, role: "assistant" }`
-
-### User Management
-
-- `GET /user/profile` - Get current user profile (requires authentication)
-
-  - Returns: `{ email: string, name: string }`
-
-- `GET /user/messages` - Get chat message history (requires authentication)
-  - Returns: `Array<{ content: string, role: "user" | "assistant" }>`
-
-**Authentication**: All protected endpoints use HTTP-only cookies for JWT tokens. The frontend automatically includes cookies with requests via `withCredentials: true`.
-
-## Troubleshooting
-
-### Port Already in Use
-
-If ports 3000, 8000, or 5432 are already in use:
-
-1. Identify the process using the port:
-
-   ```bash
-   # macOS/Linux
-   lsof -i :3000
-
-   # Windows
-   netstat -ano | findstr :3000
-   ```
-
-2. Stop the conflicting service or modify port mappings in `compose.yaml`
-
-### Database Connection Issues
-
-- Ensure database service is healthy: `docker compose ps`
-- Check database logs: `docker compose logs db`
-- Verify `DATABASE_URL` environment variable is correct
-- Ensure backend waits for database (health checks configured in `compose.yaml`)
-
-### YOLO Model Not Found
-
-- Ensure `yolov8n.pt` exists in `yolo-backend/models/` directory
-- Model will be downloaded automatically on first run if missing
-- Check backend logs for model loading errors: `docker compose logs api`
-
-### Gemini API Errors
-
-- Verify `GEMINI_API_KEY` is set correctly in `yolo-backend/.env`
-- Check API quota and rate limits at [Google AI Studio](https://makersuite.google.com/app/apikey)
-- Ensure internet connectivity for API calls
-- Review error messages in backend logs: `docker compose logs api`
-
-### Build Failures
-
-- Clear Docker cache: `docker compose build --no-cache`
-- Check Docker daemon is running: `docker ps`
-- Verify sufficient disk space: `docker system df`
-- Check Docker logs for specific error messages
-
-### Frontend Not Loading
-
-- Verify frontend container is running: `docker compose ps`
-- Check frontend logs: `docker compose logs app`
-- Ensure `NEXT_PUBLIC_YOLO_BACKEND_URL` is set correctly (defaults to `http://localhost:8000`)
-- Clear browser cache and cookies
-
-### Authentication Issues
-
-- Verify JWT secret key is set in `yolo-backend/.env`
-- Check browser console for CORS or cookie errors
-- Ensure cookies are enabled in browser settings
-- For development, cookies use `SameSite=None` and `Secure=true` (requires HTTPS or localhost)
 
 ## Development
 
-### Running Locally (Without Docker)
+### Backend Development
 
-**Backend**:
+To run the backend locally (without Docker):
 
 ```bash
 cd yolo-backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# Set up environment variables
-export GEMINI_API_KEY=your_key_here
-export JWT_SECRET_KEY=your_secret_here
-export DATABASE_URL=postgres://postgres:password@localhost:5432/yolo
-
-# Run Prisma migrations
 prisma migrate deploy
-
-# Start the server
+prisma generate
 uvicorn main:app --reload
 ```
 
-**Frontend**:
+### Frontend Development
+
+To run the frontend locally (without Docker):
 
 ```bash
 cd yolo-frontend
 npm install
-
-# Set environment variable (optional, defaults to http://localhost:8000)
-export NEXT_PUBLIC_YOLO_BACKEND_URL=http://localhost:8000
-
-# Start development server
 npm run dev
 ```
 
-**Database**: Requires PostgreSQL running locally or use Docker for database only:
+## Troubleshooting
 
-```bash
-docker run -d \
-  --name yolo-db \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=yolo \
-  -p 5432:5432 \
-  postgres:alpine
-```
+### Database Connection Issues
 
-## License
+If the backend cannot connect to the database:
 
-This project is created as part of an assignment submission.
+1. Ensure the database service is running: `docker compose ps`
+2. Check database logs: `docker compose logs db`
+3. Verify `DATABASE_URL` in `compose.yaml` matches database credentials
 
-## Contact
+### YOLO Model Not Found
 
-For questions or issues, please refer to the repository's issue tracker.
+The YOLO model (`yolov8n.pt`) should be automatically downloaded on first use. If issues occur:
+
+1. Check backend logs: `docker compose logs api`
+2. Ensure the `models/` directory exists in `yolo-backend/`
+
+### Gemini API Errors
+
+If Q&A feature is not working:
+
+1. Verify `GEMINI_API_KEY` is set correctly in `yolo-backend/.env` file
+2. Ensure the `.env` file exists in the `yolo-backend/` directory
+3. Check API key validity at [Google AI Studio](https://makersuite.google.com/app/apikey)
+4. Review backend logs for specific error messages: `docker compose logs api`
+
+### Port Conflicts
+
+If ports 3000 or 8000 are already in use:
+
+1. Stop conflicting services
+2. Or modify port mappings in `compose.yaml`:
+   ```yaml
+   ports:
+     - 3001:3000 # Change host port
+   ```
+
+## Security Considerations
+
+- Passwords are hashed using bcrypt before storage
+- JWT tokens are used for stateless authentication
+- Refresh tokens are stored in HTTP-only cookies
+- CORS is configured to allow only the frontend origin
+- Environment variables in `compose.yaml` should be kept secure and not committed with sensitive values in production
+- Use strong, randomly generated secrets for production deployments
+- Consider using Docker secrets or external secret management for production environments

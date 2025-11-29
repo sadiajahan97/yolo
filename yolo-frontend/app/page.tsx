@@ -11,18 +11,17 @@ import {
 } from "react";
 import { useForm } from "react-hook-form";
 import { Header } from "./components/header";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { UserMessage } from "./components/user-message";
 import { AssistantMessage } from "./components/assistant-message";
-import {
-  Detection,
-  Message,
-  detectObjects,
-  getMessages,
-  askGemini,
-} from "@/api";
+import { Detection, detectObjects, askGemini } from "@/api";
 import { calculateBoundingBoxArea } from "@/utils";
 import { ProfileContextProvider } from "./contexts/profile";
+
+interface Message {
+  content: string;
+  role: "user" | "assistant";
+}
 
 interface DetectionFormData {
   file: File | null;
@@ -58,7 +57,6 @@ export default function DashboardPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
 
   const {
     register,
@@ -74,15 +72,6 @@ export default function DashboardPage() {
     reset: resetQuestion,
     formState: { errors: questionErrors },
   } = useForm<QuestionFormData>();
-
-  const { isLoading: messagesLoading, error: messagesError } = useQuery({
-    queryKey: ["messages"],
-    queryFn: async () => {
-      const response = await getMessages();
-      setMessages(response.data as Message[]);
-      return response.data as Message[];
-    },
-  });
 
   const detectMutation = useMutation<DetectionResponse, Error, File>({
     mutationFn: async (file) => {
@@ -102,10 +91,9 @@ export default function DashboardPage() {
       const response = await askGemini(file, detections, question);
       return response.data as Message;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setQuestionError(null);
-      queryClient.invalidateQueries({ queryKey: ["messages"] });
-      resetQuestion();
+      setMessages((prev) => [...prev, data]);
     },
     onError: () => setQuestionError("An error occurred. Please try again."),
   });
@@ -117,12 +105,16 @@ export default function DashboardPage() {
 
   const onQuestionSubmit = async (data: QuestionFormData) => {
     const file = getValues("file");
-    if (file)
+    if (file) {
+      const question = data.question.trim();
+      setMessages((prev) => [...prev, { content: question, role: "user" }]);
+      resetQuestion();
       askGeminiMutation.mutate({
         file,
         detections,
-        question: data.question.trim(),
+        question,
       });
+    }
   };
 
   const handleFile = (file: File) => {
@@ -423,11 +415,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="chat-container" ref={chatContainerRef}>
-              {messagesError ? (
-                <AssistantMessage content="Failed to load messages. Please try again." />
-              ) : messagesLoading ? (
-                <AssistantMessage content="Loading messages..." />
-              ) : messages.length === 0 ? (
+              {messages.length === 0 ? (
                 <AssistantMessage content="No messages yet. Start a conversation!" />
               ) : (
                 messages.map((message, index) =>

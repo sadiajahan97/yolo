@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from database import prisma
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from routers import auth, gemini, user, yolo
 
@@ -20,8 +20,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/", status_code=204)
-async def root():
+@app.get("/", status_code=status.HTTP_204_NO_CONTENT)
+async def check_health():
     return None
 
 app.include_router(auth.router)

@@ -34,29 +34,3 @@ async def get_profile(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred: {str(exception)}"
         )
-
-@router.get("/messages")
-async def get_messages(
-    user: dict = Depends(verify_access_token)
-):
-    try:
-        messages = await prisma.message.find_many(
-            where={"userId": user["id"]},
-            order={"createdAt": "asc"}
-        )
-        
-        return [
-            {
-                "content": message.content,
-                "role": message.role
-            }
-            for message in messages
-        ]
-    
-    except HTTPException:
-        raise
-    except Exception as exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred: {str(exception)}"
-        )
