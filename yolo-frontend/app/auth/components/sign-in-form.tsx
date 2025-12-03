@@ -31,8 +31,9 @@ export const SignInForm = () => {
   const signInMutation = useMutation({
     mutationFn: (data: SignInFormData) =>
       signIn(data.email, data.password, data.remember),
-    onSuccess: (response) => {
-      sessionStorage.setItem("access-token", response.data.accessToken);
+    onSuccess: (response, variables) => {
+      const storage = variables.remember ? localStorage : sessionStorage;
+      storage.setItem("access-token", response.data.accessToken);
       setError(null);
       reset();
       router.push("/");

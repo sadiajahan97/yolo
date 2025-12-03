@@ -16,7 +16,11 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     if (typeof window !== "undefined") {
-      const token = sessionStorage.getItem("access-token");
+      const sessionToken = sessionStorage.getItem("access-token");
+      const localToken = localStorage.getItem("access-token");
+      const token = sessionToken || localToken;
+      const storage = sessionToken ? sessionStorage : localStorage;
+
       if (token) {
         try {
           const decoded = jwtDecode<{ exp: number }>(token);
@@ -27,7 +31,7 @@ api.interceptors.request.use(
             try {
               const response = await refresh();
               const newToken = response.data.accessToken;
-              sessionStorage.setItem("access-token", newToken);
+              storage.setItem("access-token", newToken);
               config.headers.Authorization = `Bearer ${newToken}`;
             } catch {
               config.headers.Authorization = `Bearer ${token}`;

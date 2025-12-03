@@ -25,11 +25,7 @@ export const Header = () => {
     mutationFn: signOut,
     onSuccess: () => {
       sessionStorage.removeItem("access-token");
-      setProfile(null);
-      router.push("/auth");
-    },
-    onError: () => {
-      sessionStorage.removeItem("access-token");
+      localStorage.removeItem("access-token");
       setProfile(null);
       router.push("/auth");
     },

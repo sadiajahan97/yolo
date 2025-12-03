@@ -120,7 +120,7 @@ async def sign_up(
             )
         
         jti = str(uuid.uuid4())
-        refresh_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=20)
+        refresh_expiration_time = datetime.now(timezone.utc) + timedelta(days=1)
         
         refresh_payload = {
             "id": user.id,
@@ -147,7 +147,6 @@ async def sign_up(
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
-            max_age=1200,
             httponly=True,
             secure=True,
             samesite="none",
@@ -225,8 +224,7 @@ async def sign_in(
             refresh_expiration_time = datetime.now(timezone.utc) + timedelta(days=30)
             max_age = 30 * 24 * 3600
         else:
-            refresh_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=20)
-            max_age = 20 * 60
+            refresh_expiration_time = datetime.now(timezone.utc) + timedelta(days=1)
         
         refresh_payload = {
             "id": user.id,
@@ -250,15 +248,19 @@ async def sign_in(
             }
         )
         
-        response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            max_age=max_age,
-            httponly=True,
-            secure=True,
-            samesite="none",
-            path="/auth"
-        )
+        cookie_params = {
+            "key": "refresh_token",
+            "value": refresh_token,
+            "httponly": True,
+            "secure": True,
+            "samesite": "none",
+            "path": "/auth"
+        }
+        
+        if remember:
+            cookie_params["max_age"] = max_age
+        
+        response.set_cookie(**cookie_params)
         
         access_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=15)
         access_payload = {
@@ -348,8 +350,7 @@ async def refresh_access_token(request: Request, response: Response):
             refresh_expiration_time = datetime.now(timezone.utc) + timedelta(days=30)
             max_age = 30 * 24 * 3600
         else:
-            refresh_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=20)
-            max_age = 20 * 60
+            refresh_expiration_time = datetime.now(timezone.utc) + timedelta(days=1)
         
         new_refresh_payload = {
             "id": payload["id"],
@@ -372,15 +373,19 @@ async def refresh_access_token(request: Request, response: Response):
             }
         )
         
-        response.set_cookie(
-            key="refresh_token",
-            value=new_refresh_token,
-            max_age=max_age,
-            httponly=True,
-            secure=True,
-            samesite="none",
-            path="/auth"
-        )
+        cookie_params = {
+            "key": "refresh_token",
+            "value": new_refresh_token,
+            "httponly": True,
+            "secure": True,
+            "samesite": "none",
+            "path": "/auth"
+        }
+        
+        if session.remember:
+            cookie_params["max_age"] = max_age
+        
+        response.set_cookie(**cookie_params)
         
         access_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=15)
         access_payload = {
@@ -414,19 +419,32 @@ async def sign_out(request: Request, response: Response):
         
         if refresh_token:
             refresh_token_secret = os.getenv("REFRESH_TOKEN_SECRET")
-            if refresh_token_secret:
-                try:
-                    payload = jwt.decode(
-                        refresh_token,
-                        refresh_token_secret,
-                        algorithms=["HS256"],
-                        options={"verify_exp": False}
-                    )
-                    
-                    if "jti" in payload:
-                        await prisma.session.delete(where={"jti": payload["jti"]})
-                except:
-                    pass
+            if not refresh_token_secret:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Refresh token secret not configured"
+                )
+            
+            try:
+                payload = jwt.decode(
+                    refresh_token,
+                    refresh_token_secret,
+                    algorithms=["HS256"],
+                    options={"verify_exp": False}
+                )
+                
+                if "jti" in payload:
+                    try:
+                        await prisma.session.delete_many(where={"jti": payload["jti"]})
+                    except Exception:
+                        raise HTTPException(
+                            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Failed to delete session"
+                        )
+            except HTTPException:
+                raise
+            except:
+                pass
         
         response.delete_cookie(
             key="refresh_token",
