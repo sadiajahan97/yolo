@@ -39,7 +39,7 @@ export const SignInForm = () => {
       router.push("/");
     },
     onError: (error: AxiosError) => {
-      if (error?.response?.status === 401) {
+      if (error.response?.status === 401) {
         setError("Invalid email or password");
       } else {
         setError("An error occurred. Please try again.");

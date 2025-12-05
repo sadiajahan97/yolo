@@ -6,12 +6,7 @@ services:
     build:
       context: ./yolo-frontend
       args:
-        NEXT_PUBLIC_YOLO_BACKEND_URL: &BACKEND_URL http://localhost:8000
-    environment:
-      NEXT_PUBLIC_YOLO_BACKEND_URL: *BACKEND_URL
-    env_file:
-      - path: ./yolo-frontend/.env
-        required: false
+        BACKEND_URL: http://localhost:8000
     ports:
       - 3000:3000
   api:

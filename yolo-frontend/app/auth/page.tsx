@@ -21,7 +21,10 @@ export default function AuthPage() {
   });
 
   useEffect(() => {
-    if (isSuccess && data?.authenticated) router.push("/");
+    if (isSuccess && data.authenticated) {
+      sessionStorage.setItem("access-token", data.accessToken || "");
+      router.push("/");
+    }
   }, [isSuccess, data, router]);
 
   const authTitle = activeTab === 0 ? "Welcome Back" : "Create Account";

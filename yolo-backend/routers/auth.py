@@ -64,13 +64,38 @@ async def check_auth(request: Request):
                 detail="Session not found"
             )
         
-        return {
+        response_data = {
             "authenticated": True,
             "user": {
                 "id": payload["id"],
                 "email": payload["email"]
             }
         }
+        
+        if not session.remember:
+            access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
+            if not access_token_secret:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Access token secret not configured"
+                )
+            
+            access_expiration_time = datetime.now(timezone.utc) + timedelta(minutes=15)
+            access_payload = {
+                "id": payload["id"],
+                "email": payload["email"],
+                "exp": int(access_expiration_time.timestamp())
+            }
+            
+            access_token = jwt.encode(
+                access_payload,
+                access_token_secret,
+                algorithm="HS256"
+            )
+            
+            response_data["accessToken"] = access_token
+        
+        return response_data
     
     except HTTPException:
         raise

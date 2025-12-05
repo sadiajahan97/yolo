@@ -44,7 +44,7 @@ export const SignUpForm = () => {
       router.push("/");
     },
     onError: (error: AxiosError) => {
-      if (error?.response?.status === 409) {
+      if (error.response?.status === 409) {
         setError("Email already registered");
       } else {
         setError("An error occurred. Please try again.");

@@ -50,7 +50,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401 && typeof window !== "undefined")
+    if (error.response?.status === 401 && typeof window !== "undefined")
       window.location.href = "/auth";
     else return Promise.reject(error);
   }
@@ -70,8 +70,8 @@ authApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (
-      error?.response?.status === 401 &&
-      !error?.config?.url?.includes("/check") &&
+      error.response?.status === 401 &&
+      !error.config?.url?.includes("/check") &&
       typeof window !== "undefined"
     )
       window.location.href = "/auth";
