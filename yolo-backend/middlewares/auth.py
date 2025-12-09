@@ -17,6 +17,7 @@ async def verify_access_token(request: Request) -> dict:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Access token not found in Authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
     
@@ -38,6 +39,7 @@ async def verify_access_token(request: Request) -> dict:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload",
+                headers={"WWW-Authenticate": "Bearer"},
             )
         
         user = await prisma.user.find_unique(where={"id": payload["id"]})
@@ -45,6 +47,7 @@ async def verify_access_token(request: Request) -> dict:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
             )
         
         return {
@@ -56,12 +59,14 @@ async def verify_access_token(request: Request) -> dict:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     
     except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     
     except HTTPException:
@@ -70,4 +75,5 @@ async def verify_access_token(request: Request) -> dict:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Could not validate credentials: {str(exception)}",
+            headers={"WWW-Authenticate": "Bearer"},
         )
