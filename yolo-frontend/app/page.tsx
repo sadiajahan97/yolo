@@ -202,8 +202,8 @@ export default function DashboardPage() {
   return (
     <ProfileContextProvider>
       <Header />
-      <main className="mx-auto max-w-[1400px] px-8 pb-[60px] pt-8 md:px-5">
-        <section className="mb-7 rounded-2xl border border-slate-200 bg-white p-9 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6">
+      <main className="mx-auto max-w-[1400px] px-4 pb-12 pt-6 lg:px-8 lg:pb-[60px] lg:pt-8">
+        <section className="mb-7 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] lg:p-9">
           <h2 className="mb-2 text-xl font-bold tracking-[-0.3px] text-slate-900 sm:text-lg">
             Upload Image for Detection
           </h2>
@@ -263,8 +263,8 @@ export default function DashboardPage() {
           </div>
 
           <div className={`mt-7 ${previewImage ? "block" : "hidden"}`}>
-            <div className="flex gap-6 items-start lg:flex-col">
-              <div className="relative max-w-[500px] flex-1 overflow-hidden rounded-xl bg-slate-100 lg:max-w-full">
+            <div className="flex flex-col gap-6 items-start sm:flex-row">
+              <div className="relative w-full max-w-[500px] overflow-hidden rounded-xl bg-slate-100 sm:flex-1">
                 {previewImage && (
                   <img
                     src={previewImage}
@@ -273,18 +273,16 @@ export default function DashboardPage() {
                   />
                 )}
               </div>
-              {errors.file && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.file.message}
-                </p>
-              )}
-              {!errors.file && detectionError && (
-                <p className="mt-1 text-sm text-red-600">{detectionError}</p>
-              )}
-              <div className="flex shrink-0 flex-col gap-3 lg:w-full lg:flex-row">
+              <div className="flex w-full flex-row gap-3 sm:w-auto sm:flex-col sm:shrink-0">
+                {errors.file && (
+                  <p className="text-sm text-red-600">{errors.file.message}</p>
+                )}
+                {!errors.file && detectionError && (
+                  <p className="text-sm text-red-600">{detectionError}</p>
+                )}
                 <button
                   type="button"
-                  className="whitespace-nowrap rounded-lg border-none px-6 py-3 text-sm font-semibold transition-all cursor-pointer font-['Inter',sans-serif] bg-linear-to-br from-emerald-500 to-emerald-700 text-white shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(16,185,129,0.4)] lg:flex-1"
+                  className="flex-1 whitespace-nowrap rounded-lg border-none px-6 py-3 text-sm font-semibold transition-all cursor-pointer font-['Inter',sans-serif] bg-linear-to-br from-emerald-500 to-emerald-700 text-white shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(16,185,129,0.4)] sm:flex-none"
                   onClick={handleSubmit(onSubmit)}
                   disabled={detectMutation.isPending || !getValues("file")}
                 >
@@ -292,7 +290,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="button"
-                  className="whitespace-nowrap rounded-lg border-[1.5px] border-red-200 bg-white px-6 py-3 text-sm font-semibold text-red-500 transition-all cursor-pointer font-['Inter',sans-serif] hover:border-red-300 hover:bg-red-50 lg:flex-1"
+                  className="flex-1 whitespace-nowrap rounded-lg border-[1.5px] border-red-200 bg-white px-6 py-3 text-sm font-semibold text-red-500 transition-all cursor-pointer font-['Inter',sans-serif] hover:border-red-300 hover:bg-red-50 sm:flex-none"
                   onClick={handleRemoveImage}
                 >
                   Remove Image
@@ -303,8 +301,8 @@ export default function DashboardPage() {
         </section>
 
         <div className="mt-7 block" id="resultsSection">
-          <div className="mb-7 grid grid-cols-2 gap-6 lg:grid-cols-1">
-            <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6">
+          <div className="mb-7 grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] lg:p-7">
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-[17px] font-bold tracking-[-0.2px] text-slate-900">
                   Annotated Image
@@ -323,7 +321,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] lg:p-7">
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-[17px] font-bold tracking-[-0.2px] text-slate-900">
                   Detection Results
@@ -435,7 +433,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] lg:p-7">
             <div className="mb-5 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-linear-to-br from-purple-500 to-purple-700">
                 <svg
@@ -473,7 +471,7 @@ export default function DashboardPage() {
             </div>
 
             <form
-              className="flex gap-3 sm:flex-col"
+              className="flex flex-col gap-3 sm:flex-row"
               onSubmit={handleQuestionSubmit(onQuestionSubmit)}
             >
               <input
@@ -503,7 +501,7 @@ export default function DashboardPage() {
               )}
               <button
                 type="submit"
-                className="whitespace-nowrap rounded-[10px] border-none bg-linear-to-br from-purple-500 to-purple-700 px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(139,92,246,0.3)] cursor-pointer font-['Inter',sans-serif] sm:w-full"
+                className="whitespace-nowrap rounded-[10px] border-none bg-linear-to-br from-purple-500 to-purple-700 px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(139,92,246,0.3)] cursor-pointer font-['Inter',sans-serif]"
                 disabled={
                   askGeminiMutation.isPending ||
                   !getValues("file") ||

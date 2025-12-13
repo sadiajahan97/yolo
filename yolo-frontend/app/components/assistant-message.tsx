@@ -2,7 +2,7 @@
 
 export const AssistantMessage = ({ content }: { content: string }) => {
   return (
-    <div className="mb-4 flex gap-3">
+    <div className="mb-4 flex gap-3 items-center">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-purple-500 to-purple-700 text-xs font-semibold text-white">
         AI
       </div>

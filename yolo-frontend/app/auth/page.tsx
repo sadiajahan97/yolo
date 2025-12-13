@@ -36,96 +36,97 @@ export default function AuthPage() {
   const handleSwitchTab = (tab: 0 | 1) => setActiveTab(tab);
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-5 bg-[linear-gradient(127deg,#0f172a_0%,#1e293b_47%,#334155_100%)] [@media(max-width:480px)]:p-0">
-      <div className="flex max-w-[1100px] w-full bg-white rounded-[16px] overflow-hidden shadow-[0_24px_48px_rgba(0,0,0,0.24)] [@media(max-width:968px)]:flex-col [@media(max-width:480px)]:rounded-none">
-        <div className="relative flex-1 flex flex-col justify-between text-white bg-gradient-[165deg,#2563eb_0%,#1e40af_100%] overflow-hidden [@media(max-width:968px)]:p-[40px_30px] [@media(max-width:480px)]:p-[30px_20px] p-[60px_50px]">
+    <main className="min-h-screen flex items-center justify-center p-5 bg-linear-to-br from-slate-900 via-slate-800 to-slate-700 sm:p-0">
+      <div className="flex flex-col sm:flex-row max-w-[1100px] w-full bg-white rounded-2xl sm:rounded-none overflow-hidden shadow-[0_24px_48px_rgba(0,0,0,0.24)]">
+        <div className="relative flex-1 flex flex-col justify-between text-white bg-linear-to-br from-blue-600 to-blue-800 overflow-hidden px-5 py-6 sm:px-5 sm:py-[30px] lg:px-[30px] lg:py-[40px]">
           <div className="absolute top-[-50%] right-[-20%] w-[400px] h-[400px] bg-white/8 rounded-full pointer-events-none" />
           <div className="absolute bottom-[-30%] left-[-10%] w-[300px] h-[300px] bg-white/6 rounded-full pointer-events-none" />
-
-          <div className="relative z-1">
-            <h1 className="text-[28px] font-bold mb-3 tracking-[-0.5px] [@media(max-width:480px)]:text-[24px]">
-              AI Vision Platform
-            </h1>
-            <p className="text-[15px] opacity-[0.92] leading-[1.6] font-light">
-              Advanced object detection and intelligent analysis powered by
-              state-of-the-art machine learning models
-            </p>
-          </div>
-
-          <div className="relative z-1 mt-10 [@media(max-width:968px)]:mt-[30px]">
-            <div className="flex items-start mb-[28px] [@media(max-width:968px)]:mb-[20px]">
-              <div className="w-[44px] h-[44px] bg-white/15 rounded-[10px] flex items-center justify-center mr-[18px] shrink-0 backdrop-blur-[10px]">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-[22px] h-[22px] stroke-white stroke-2 fill-none"
-                >
-                  <path d="M9 11l3 3L22 4" />
-                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-                </svg>
-              </div>
-              <div className="feature-content">
-                <h3 className="text-[16px] font-semibold mb-[6px]">
-                  YOLO Object Detection
-                </h3>
-                <p className="text-[14px] opacity-[0.88] leading-1.5 font-light">
-                  Real-time object detection with industry-leading accuracy and
-                  performance metrics
-                </p>
-              </div>
+          <div className="relative flex flex-col justify-between flex-1 isolate">
+            <div className="relative">
+              <h1 className="text-[28px] font-bold mb-3 tracking-[-0.5px] sm:text-2xl">
+                AI Vision Platform
+              </h1>
+              <p className="text-[15px] opacity-[0.92] leading-[1.6] font-light">
+                Advanced object detection and intelligent analysis powered by
+                state-of-the-art machine learning models
+              </p>
             </div>
 
-            <div className="flex items-start mb-[28px] [@media(max-width:968px)]:mb-[20px]">
-              <div className="w-[44px] h-[44px] bg-white/15 rounded-[10px] flex items-center justify-center mr-[18px] shrink-0 backdrop-blur-[10px]">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-[22px] h-[22px] stroke-white stroke-2 fill-none"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 16v-4M12 8h.01" />
-                </svg>
+            <div className="relative mt-10 lg:mt-[30px]">
+              <div className="flex items-start mb-7 lg:mb-5 relative">
+                <div className="w-[44px] h-[44px] bg-white/15 rounded-[10px] flex items-center justify-center mr-[18px] shrink-0 backdrop-blur-[10px]">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-[22px] h-[22px] stroke-white stroke-2 fill-none"
+                  >
+                    <path d="M9 11l3 3L22 4" />
+                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-[16px] font-semibold mb-[6px]">
+                    YOLO Object Detection
+                  </h3>
+                  <p className="text-[14px] opacity-[0.88] leading-relaxed font-light">
+                    Real-time object detection with industry-leading accuracy
+                    and performance metrics
+                  </p>
+                </div>
               </div>
-              <div className="feature-content">
-                <h3 className="text-[16px] font-semibold mb-[6px]">
-                  AI-Powered Q&A
-                </h3>
-                <p className="text-[14px] opacity-[0.88] leading-1.5 font-light">
-                  Ask questions about detected objects using Gemini&apos;s
-                  advanced natural language understanding
-                </p>
-              </div>
-            </div>
 
-            <div className="flex items-start mb-[28px] [@media(max-width:968px)]:mb-[20px]">
-              <div className="w-[44px] h-[44px] bg-white/15 rounded-[10px] flex items-center justify-center mr-[18px] shrink-0 backdrop-blur-[10px]">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-[22px] h-[22px] stroke-white stroke-2 fill-none"
-                >
-                  <rect x="3" y="3" width="7" height="7" />
-                  <rect x="14" y="3" width="7" height="7" />
-                  <rect x="14" y="14" width="7" height="7" />
-                  <rect x="3" y="14" width="7" height="7" />
-                </svg>
+              <div className="flex items-start mb-7 lg:mb-5 relative">
+                <div className="w-[44px] h-[44px] bg-white/15 rounded-[10px] flex items-center justify-center mr-[18px] shrink-0 backdrop-blur-[10px]">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-[22px] h-[22px] stroke-white stroke-2 fill-none"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-4M12 8h.01" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-[16px] font-semibold mb-[6px]">
+                    AI-Powered Q&A
+                  </h3>
+                  <p className="text-[14px] opacity-[0.88] leading-relaxed font-light">
+                    Ask questions about detected objects using Gemini&apos;s
+                    advanced natural language understanding
+                  </p>
+                </div>
               </div>
-              <div className="feature-content">
-                <h3 className="text-[16px] font-semibold mb-[6px]">
-                  Interactive Analysis
-                </h3>
-                <p className="text-[14px] opacity-[0.88] leading-1.5 font-light">
-                  Sortable results with detailed confidence scores and bounding
-                  box coordinates
-                </p>
+
+              <div className="flex items-start relative">
+                <div className="w-[44px] h-[44px] bg-white/15 rounded-[10px] flex items-center justify-center mr-[18px] shrink-0 backdrop-blur-[10px]">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-[22px] h-[22px] stroke-white stroke-2 fill-none"
+                  >
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-[16px] font-semibold mb-[6px]">
+                    Interactive Analysis
+                  </h3>
+                  <p className="text-[14px] opacity-[0.88] leading-relaxed font-light">
+                    Sortable results with detailed confidence scores and
+                    bounding box coordinates
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col justify-center p-[60px_50px] [@media(max-width:968px)]:p-[40px_30px] [@media(max-width:480px)]:p-[30px_20px]">
-          <div className="mb-[36px]">
-            <h2 className="text-[32px] font-bold text-[#0f172a] mb-2 tracking-[-0.8px] [@media(max-width:480px)]:text-[26px]">
+        <div className="flex-1 flex flex-col justify-center px-5 py-6 sm:px-5 sm:py-[30px] lg:px-[30px] lg:py-[40px]">
+          <div className="mb-9">
+            <h2 className="text-[32px] font-bold text-slate-900 mb-2 tracking-[-0.8px] sm:text-[26px]">
               {authTitle}
             </h2>
-            <p className="text-[15px] text-[#64748b] font-normal">
+            <p className="text-[15px] text-slate-500 font-normal">
               {authSubtitle}
             </p>
           </div>
