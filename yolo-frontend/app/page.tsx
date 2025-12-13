@@ -202,32 +202,44 @@ export default function DashboardPage() {
   return (
     <ProfileContextProvider>
       <Header />
-      <main className="main-content">
-        <section className="upload-section">
-          <h2 className="section-title">Upload Image for Detection</h2>
-          <p className="section-subtitle">
+      <main className="mx-auto max-w-[1400px] px-8 pb-[60px] pt-8 md:px-5">
+        <section className="mb-7 rounded-2xl border border-slate-200 bg-white p-9 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6">
+          <h2 className="mb-2 text-xl font-bold tracking-[-0.3px] text-slate-900 sm:text-lg">
+            Upload Image for Detection
+          </h2>
+          <p className="mb-7 text-sm text-slate-500">
             Upload an image to detect objects using our advanced YOLO model
           </p>
 
           <div
-            className={`upload-area ${isDragOver ? "dragover" : ""}`}
+            className={`relative cursor-pointer rounded-xl border-2 border-dashed bg-slate-50 p-12 px-8 text-center transition-all hover:border-blue-600 hover:bg-blue-50 sm:p-8 sm:px-5 ${
+              isDragOver ? "border-blue-600 bg-blue-50" : "border-slate-300"
+            }`}
             onClick={handleUploadAreaClick}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
-            <div className="upload-icon">
-              <svg viewBox="0 0 24 24">
+            <div className="mx-auto mb-[18px] flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_4px_12px_rgba(37,99,235,0.15)]">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-7 w-7 stroke-blue-600 stroke-2 fill-none"
+              >
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
             </div>
-            <div className="upload-text">Drop your image here</div>
-            <div className="upload-subtext">
+            <div className="mb-1.5 text-base font-semibold text-slate-900">
+              Drop your image here
+            </div>
+            <div className="mb-5 text-sm text-slate-500">
               or click to browse (PNG, JPG, JPEG up to 10MB)
             </div>
-            <button className="upload-btn" onClick={handleUploadButtonClick}>
+            <button
+              className="rounded-lg bg-linear-to-br from-blue-600 to-blue-800 px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(37,99,235,0.3)] font-['Inter',sans-serif]"
+              onClick={handleUploadButtonClick}
+            >
               Select Image
             </button>
             <input
@@ -244,20 +256,20 @@ export default function DashboardPage() {
                 },
               })}
               ref={fileInputRef}
-              className="file-input"
+              className="hidden"
               accept="image/*"
               onChange={handleFileInputChange}
             />
           </div>
 
-          <div className={`image-preview ${previewImage ? "active" : ""}`}>
-            <div className="preview-container">
-              <div className="preview-image-wrapper">
+          <div className={`mt-7 ${previewImage ? "block" : "hidden"}`}>
+            <div className="flex gap-6 items-start lg:flex-col">
+              <div className="relative max-w-[500px] flex-1 overflow-hidden rounded-xl bg-slate-100 lg:max-w-full">
                 {previewImage && (
                   <img
                     src={previewImage}
                     alt="Preview"
-                    className="preview-image"
+                    className="block h-auto w-full"
                   />
                 )}
               </div>
@@ -269,10 +281,10 @@ export default function DashboardPage() {
               {!errors.file && detectionError && (
                 <p className="mt-1 text-sm text-red-600">{detectionError}</p>
               )}
-              <div className="preview-actions">
+              <div className="flex shrink-0 flex-col gap-3 lg:w-full lg:flex-row">
                 <button
                   type="button"
-                  className="action-btn detect-btn"
+                  className="whitespace-nowrap rounded-lg border-none px-6 py-3 text-sm font-semibold transition-all cursor-pointer font-['Inter',sans-serif] bg-linear-to-br from-emerald-500 to-emerald-700 text-white shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(16,185,129,0.4)] lg:flex-1"
                   onClick={handleSubmit(onSubmit)}
                   disabled={detectMutation.isPending || !getValues("file")}
                 >
@@ -280,7 +292,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="button"
-                  className="action-btn remove-btn"
+                  className="whitespace-nowrap rounded-lg border-[1.5px] border-red-200 bg-white px-6 py-3 text-sm font-semibold text-red-500 transition-all cursor-pointer font-['Inter',sans-serif] hover:border-red-300 hover:bg-red-50 lg:flex-1"
                   onClick={handleRemoveImage}
                 >
                   Remove Image
@@ -290,40 +302,52 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <div className="results-section active" id="resultsSection">
-          <div className="results-grid">
-            <div className="result-card">
-              <div className="card-header">
-                <h3 className="card-title">Annotated Image</h3>
-                <span className="card-badge">
+        <div className="mt-7 block" id="resultsSection">
+          <div className="mb-7 grid grid-cols-2 gap-6 lg:grid-cols-1">
+            <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <h3 className="text-[17px] font-bold tracking-[-0.2px] text-slate-900">
+                  Annotated Image
+                </h3>
+                <span className="rounded-[20px] bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
                   {detections.length}{" "}
                   {detections.length === 1 ? "Object" : "Objects"}
                 </span>
               </div>
-              <div className="annotated-image-wrapper">
+              <div className="overflow-hidden rounded-[10px] bg-slate-100">
                 <img
                   src={annotatedImage}
                   alt="Annotated"
-                  className="annotated-image"
+                  className="block h-auto w-full"
                 />
               </div>
             </div>
 
-            <div className="result-card">
-              <div className="card-header">
-                <h3 className="card-title">Detection Results</h3>
-                <span className="card-badge">Sortable</span>
+            <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <h3 className="text-[17px] font-bold tracking-[-0.2px] text-slate-900">
+                  Detection Results
+                </h3>
+                <span className="rounded-[20px] bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+                  Sortable
+                </span>
               </div>
-              <div className="table-wrapper">
-                <table className="results-table">
-                  <thead>
+              <div className="overflow-x-auto rounded-[10px] border border-slate-200 md:text-[13px]">
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-slate-50">
                     <tr>
                       <th
                         onClick={() => handleSortTable(0)}
-                        className={sortColumn === 0 ? "sorted" : ""}
+                        className={`relative cursor-pointer select-none px-4 py-3.5 text-left text-[13px] font-semibold uppercase tracking-[0.3px] text-slate-600 hover:bg-slate-100 ${
+                          sortColumn === 0 ? "" : ""
+                        }`}
                       >
                         Object
-                        <span className="sort-icon">
+                        <span
+                          className={`ml-1.5 inline-block text-[11px] ${
+                            sortColumn === 0 ? "opacity-100" : "opacity-40"
+                          }`}
+                        >
                           {sortColumn === 0
                             ? sortDirection === "asc"
                               ? "▲"
@@ -333,10 +357,16 @@ export default function DashboardPage() {
                       </th>
                       <th
                         onClick={() => handleSortTable(1)}
-                        className={sortColumn === 1 ? "sorted" : ""}
+                        className={`relative cursor-pointer select-none px-4 py-3.5 text-left text-[13px] font-semibold uppercase tracking-[0.3px] text-slate-600 hover:bg-slate-100 ${
+                          sortColumn === 1 ? "" : ""
+                        }`}
                       >
                         Confidence
-                        <span className="sort-icon">
+                        <span
+                          className={`ml-1.5 inline-block text-[11px] ${
+                            sortColumn === 1 ? "opacity-100" : "opacity-40"
+                          }`}
+                        >
                           {sortColumn === 1
                             ? sortDirection === "asc"
                               ? "▲"
@@ -346,10 +376,16 @@ export default function DashboardPage() {
                       </th>
                       <th
                         onClick={() => handleSortTable(2)}
-                        className={sortColumn === 2 ? "sorted" : ""}
+                        className={`relative cursor-pointer select-none px-4 py-3.5 text-left text-[13px] font-semibold uppercase tracking-[0.3px] text-slate-600 hover:bg-slate-100 ${
+                          sortColumn === 2 ? "" : ""
+                        }`}
                       >
                         Bounding Box
-                        <span className="sort-icon">
+                        <span
+                          className={`ml-1.5 inline-block text-[11px] ${
+                            sortColumn === 2 ? "opacity-100" : "opacity-40"
+                          }`}
+                        >
                           {sortColumn === 2
                             ? sortDirection === "asc"
                               ? "▲"
@@ -361,29 +397,29 @@ export default function DashboardPage() {
                   </thead>
                   <tbody>
                     {detections.map((detection, index) => (
-                      <tr key={index}>
-                        <td>
-                          <span className="object-class">
+                      <tr key={index} className="hover:bg-slate-50">
+                        <td className="border-t border-slate-200 px-4 py-3.5 text-slate-700 md:px-3 md:py-2.5">
+                          <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-[13px] font-medium text-slate-600">
                             {detection.object}
                           </span>
                         </td>
-                        <td>
-                          <div className="confidence-bar">
-                            <div className="confidence-progress">
+                        <td className="border-t border-slate-200 px-4 py-3.5 text-slate-700 md:px-3 md:py-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex-1 overflow-hidden rounded-[3px] bg-slate-200 h-1.5">
                               <div
-                                className="confidence-fill"
+                                className="h-full rounded-[3px] bg-linear-to-r from-emerald-500 to-emerald-700 transition-[width] duration-300 ease-in-out"
                                 style={{
                                   width: `${detection.confidence * 100}%`,
                                 }}
                               />
                             </div>
-                            <span className="confidence-value">
+                            <span className="min-w-[45px] text-[13px] font-semibold text-slate-900">
                               {Math.round(detection.confidence * 100)}%
                             </span>
                           </div>
                         </td>
-                        <td>
-                          <span className="boundingBox-coords">
+                        <td className="border-t border-slate-200 px-4 py-3.5 text-slate-700 md:px-3 md:py-2.5">
+                          <span className="font-['Courier_New',monospace] text-xs text-slate-500">
                             (
                             {detection.boundingBox
                               .map((coordinate) => Math.round(coordinate))
@@ -399,22 +435,30 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="qa-section">
-            <div className="qa-header">
-              <div className="qa-icon">
-                <svg viewBox="0 0 24 24">
+          <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_1px_3px_rgba(0,0,0,0.04)] md:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-linear-to-br from-purple-500 to-purple-700">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-[22px] w-[22px] stroke-white stroke-[2.5] fill-none"
+                >
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                 </svg>
               </div>
               <div>
-                <h3 className="card-title">Ask Questions About Results</h3>
-                <p className="section-subtitle" style={{ margin: 0 }}>
+                <h3 className="text-[17px] font-bold tracking-[-0.2px] text-slate-900">
+                  Ask Questions About Results
+                </h3>
+                <p className="m-0 text-sm text-slate-500">
                   Powered by Gemini 2.5 Flash
                 </p>
               </div>
             </div>
 
-            <div className="chat-container" ref={chatContainerRef}>
+            <div
+              className="mb-5 max-h-80 overflow-y-auto rounded-[10px] border border-slate-200 bg-slate-50 p-4"
+              ref={chatContainerRef}
+            >
               {messages.length === 0 ? (
                 <AssistantMessage content="No messages yet. Start a conversation!" />
               ) : (
@@ -429,12 +473,12 @@ export default function DashboardPage() {
             </div>
 
             <form
-              className="qa-input-wrapper"
+              className="flex gap-3 sm:flex-col"
               onSubmit={handleQuestionSubmit(onQuestionSubmit)}
             >
               <input
                 type="text"
-                className="qa-input"
+                className="flex-1 rounded-[10px] border-[1.5px] border-slate-200 px-[18px] py-3 text-sm transition-all focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-100 font-['Inter',sans-serif]"
                 placeholder="Ask a question about the detected objects..."
                 {...registerQuestion("question", {
                   required: "Please enter a question",
@@ -450,16 +494,16 @@ export default function DashboardPage() {
                 }
               />
               {questionErrors.question && (
-                <p className="text-sm text-red-600 mt-1">
+                <p className="mt-1 text-sm text-red-600">
                   {questionErrors.question.message}
                 </p>
               )}
               {!questionErrors.question && questionError && (
-                <p className="text-sm text-red-600 mt-1">{questionError}</p>
+                <p className="mt-1 text-sm text-red-600">{questionError}</p>
               )}
               <button
                 type="submit"
-                className="qa-submit"
+                className="whitespace-nowrap rounded-[10px] border-none bg-linear-to-br from-purple-500 to-purple-700 px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(139,92,246,0.3)] cursor-pointer font-['Inter',sans-serif] sm:w-full"
                 disabled={
                   askGeminiMutation.isPending ||
                   !getValues("file") ||
